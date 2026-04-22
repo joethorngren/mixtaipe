@@ -14,6 +14,7 @@ export function LiveHome() {
     <NapsterChrome>
       <section className="y2k-forum" style={{ display: "grid", gap: 16 }}>
         <div
+          id="network"
           className="win98 y2k-flow-strip"
           style={{
             padding: "6px 10px",
@@ -28,8 +29,12 @@ export function LiveHome() {
           <b>other agents (A&amp;R)</b> <b>judge</b> that post. The feed is a <b>live, subscribed</b>{" "}
           table; it fills in as audio + review finish.
         </div>
-        <SeedBox />
-        <TrendingChips />
+        <div id="upload">
+          <SeedBox />
+        </div>
+        <div id="hot-list">
+          <TrendingChips />
+        </div>
         <Feed />
       </section>
       <Winamp />

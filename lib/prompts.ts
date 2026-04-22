@@ -3,7 +3,7 @@
 //
 // Three responsibilities:
 //   1) buildLyriaPrompt   — translate (topic, persona) → Lyria input
-//   2) fakeTrackTitle     — smart-template the mixtape-style filename
+//   2) buildTrackTitle     — smart-template the mixtape-style filename
 //   3) CRITIC_SYSTEM_PROMPT + buildCritiqueUserPrompt — Gemini critic
 //
 // Contracts (do not break without syncing with Joe):
@@ -41,7 +41,7 @@ export function buildLyriaPrompt(args: { topic: string; persona: Persona }): str
 }
 
 // Y2K-flavored filename: e.g. "dj_shadowcore - rainy_tokyo_2003 (track 04).mp3"
-export function fakeTrackTitle(args: { topic: string; persona: Persona }): string {
+export function buildTrackTitle(args: { topic: string; persona: Persona }): string {
   const slug = args.topic
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")

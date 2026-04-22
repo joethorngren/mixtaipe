@@ -97,3 +97,24 @@ export const insertCritique = mutation({
     return ctx.db.insert("critiques", { ...args, createdAt: Date.now() });
   },
 });
+
+export const deleteNonLyriaTracks = mutation({
+  args: { confirm: v.literal("delete non-lyria prod tracks") },
+  handler: async (ctx) => {
+    const tracks = await ctx.db.query("tracks").collect();
+    let deleted = 0;
+    for (const track of tracks) {
+      if (track.lyriaModel === "lyria-3-clip-preview") continue;
+      const critiques = await ctx.db
+        .query("critiques")
+        .withIndex("by_trackId", (q) => q.eq("trackId", track._id))
+        .collect();
+      for (const critique of critiques) {
+        await ctx.db.delete(critique._id);
+      }
+      await ctx.db.delete(track._id);
+      deleted++;
+    }
+    return { deleted };
+  },
+});

@@ -35,7 +35,7 @@ function TopBar() {
   return (
     <div className="marquee" style={{ maxWidth: 1040, margin: "0 auto" }}>
       <span className="marquee-inner">
-        ★彡 WELCOME TO mixtAIpe — AI mixtape P2L (peer-to-list) ★ 47,291 agents “online” ★ best in 800×600 ★
+        ★彡 WELCOME TO mixtAIpe — live AI mixtape P2L (peer-to-list) ★ backed by Convex + Google Trends ★
       </span>
     </div>
   );
@@ -61,22 +61,15 @@ function Banner() {
         <span className="blink" style={{ color: "red" }}>●REC</span>
       </p>
       <div style={{ position: "absolute", top: 4, right: 8 }}>
-        <HitCounter value={47291} />
+        <div className="hit-counter" aria-label="live data source">
+          <span className="hit-counter-label">LIVE</span>
+          <span className="hit-counter-digits">
+            {["C", "O", "N", "V", "E", "X"].map((d, i) => (
+              <span key={i} className="hit-counter-digit">{d}</span>
+            ))}
+          </span>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function HitCounter({ value }: { value: number }) {
-  const digits = String(value).padStart(7, "0").split("");
-  return (
-    <div className="hit-counter" aria-label={`hit counter ${value}`}>
-      <span className="hit-counter-label">HITS</span>
-      <span className="hit-counter-digits">
-        {digits.map((d, i) => (
-          <span key={i} className="hit-counter-digit">{d}</span>
-        ))}
-      </span>
     </div>
   );
 }
@@ -156,14 +149,14 @@ function UnderConstruction() {
   );
 }
 
-const CATEGORIES: Array<{ icon: string; label: string; badge?: string }> = [
-  { icon: "📁", label: "Library" },
-  { icon: "🔥", label: "Hot List", badge: "NEW" },
-  { icon: "👥", label: "Buddies", badge: "47,291" },
-  { icon: "📈", label: "Charts" },
-  { icon: "🔎", label: "Search" },
-  { icon: "💬", label: "Chat Rooms" },
-  { icon: "⬆", label: "Upload" },
+const CATEGORIES: Array<{ icon: string; label: string; href: string; badge?: string }> = [
+  { icon: "📁", label: "Library", href: "#library" },
+  { icon: "🔥", label: "Hot List", href: "#hot-list", badge: "LIVE" },
+  { icon: "👥", label: "Buddies", href: "#network" },
+  { icon: "📈", label: "Charts", href: "#library" },
+  { icon: "🔎", label: "Search", href: "#upload" },
+  { icon: "💬", label: "Chat Rooms", href: "#network" },
+  { icon: "⬆", label: "Upload", href: "#upload" },
 ];
 
 function Sidebar() {
@@ -193,7 +186,7 @@ function Sidebar() {
         {CATEGORIES.map((c) => (
           <li key={c.label}>
             <a
-              href={`#${c.label.toLowerCase().replace(/\s+/g, "-")}`}
+              href={c.href}
               className="napster-nav"
             >
               <span style={{ width: 18, textAlign: "center" }}>{c.icon}</span>
@@ -212,9 +205,9 @@ function Sidebar() {
           lineHeight: 1.4,
         }}
       >
-        <div><b>Connection:</b> 56.6k</div>
-        <div><b>Shared:</b> 1,337 files</div>
-        <div><b>Ratio:</b> 4.20</div>
+        <div><b>Connection:</b> Convex live</div>
+        <div><b>Trends:</b> Google top 10</div>
+        <div><b>Feed:</b> prod data only</div>
         <div style={{ marginTop: 4 }}>
           <span className="blink" style={{ color: "green" }}>●</span> online
         </div>
@@ -253,8 +246,7 @@ function Footer() {
       }}
       id="guestbook"
     >
-      © 1999-2002 mixtAIpe ™ • hosted on geocities • you are visitor #
-      <span style={{ fontFamily: "monospace" }}>0000047291</span> •{" "}
+      © mixtAIpe • live demo data from Convex prod •{" "}
       <a href="#guestbook" style={{ color: "#0000ee" }}>sign the guestbook</a> •{" "}
       <a href="#email" style={{ color: "#0000ee" }}>✉ email the webmaster</a>
       <div style={{ marginTop: 4, opacity: 0.7 }}>

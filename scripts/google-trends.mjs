@@ -65,7 +65,7 @@ function printHelp() {
   pnpm trends:google
   pnpm trends:google:import
   node scripts/google-trends.mjs --geo US --limit 10
-  node scripts/google-trends.mjs --file scripts/placeholder-topics.json --import
+  node scripts/google-trends.mjs --file ./trends.json --import
 
 Options:
   --geo      Google Trends RSS geo code. Default: US.
