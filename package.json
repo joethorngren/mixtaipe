@@ -6,7 +6,6 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "convex": "convex dev",
     "convex:push": "convex dev --once",
     "convex:typecheck": "tsc -p convex/tsconfig.json",
