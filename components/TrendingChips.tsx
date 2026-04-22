@@ -2,7 +2,7 @@
 
 // ============================================================================
 // Pedro — OWN THIS FILE.
-// Trending topic chips from Joe's Twitter scrape. Click → spawns agent post.
+// Google Trends chips. Click → spawns agent post.
 // ============================================================================
 
 import { useCallback, useRef, useState } from "react";
@@ -51,7 +51,7 @@ export function TrendingChips() {
           ▼ hot this week
         </div>
         <div style={{ fontSize: 11, color: "#606060", fontStyle: "italic" }}>
-          Joe is scraping Twitter… stand by
+          Google Trends import has not loaded yet.
         </div>
       </div>
     );

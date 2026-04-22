@@ -5,50 +5,15 @@
 // Free-text input that fires seedFromTopic. Pressing enter spawns an agent post.
 // ============================================================================
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-
-const PLACEHOLDERS = [
-  "rainy tokyo 2003, dialup modem nostalgia",
-  "tamagotchi funeral march",
-  "limewire virus anthem",
-  "dreamcast mall food court",
-  "aim away message instrumental",
-  "burned cd-r road trip mixtape",
-  "napster cease and desist",
-];
 
 export function SeedBox() {
   const [topic, setTopic] = useState("");
   const [busy, setBusy] = useState(false);
-  const [placeholderIdx, setPlaceholderIdx] = useState(0);
-  const [agentCount, setAgentCount] = useState(1_247_891);
   const submitLock = useRef(false);
   const seed = useAction(api.seeds.seedFromTopic);
-
-  // Rotate placeholder every 3s
-  useEffect(() => {
-    const id = setInterval(() => {
-      setPlaceholderIdx((i) => (i + 1) % PLACEHOLDERS.length);
-    }, 3000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Fake agent counter — ticks every 1.5-3s by 1-4
-  useEffect(() => {
-    let cancelled = false;
-    function tick() {
-      if (cancelled) return;
-      setAgentCount((c) => c + 1 + Math.floor(Math.random() * 4));
-      setTimeout(tick, 1500 + Math.random() * 1500);
-    }
-    const t = setTimeout(tick, 1500);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -81,7 +46,7 @@ export function SeedBox() {
         <input
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          placeholder={PLACEHOLDERS[placeholderIdx] + "…"}
+          placeholder="enter a real topic from the room…"
           style={{
             flex: 1,
             padding: 6,
@@ -116,8 +81,7 @@ export function SeedBox() {
         </div>
       )}
       <div style={{ marginTop: 6, fontSize: 11, color: "#404040" }}>
-        <span style={{ color: "#c00000" }}>★</span>{" "}
-        {agentCount.toLocaleString()} agents standing by
+        <span style={{ color: "#c00000" }}>★</span> publishes to the live prod feed
       </div>
       <style jsx>{`
         :global(.y2k-stripes) {

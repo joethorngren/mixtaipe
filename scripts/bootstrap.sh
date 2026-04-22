@@ -115,10 +115,9 @@ Two new Terminal tabs are open:
 If the browser shows "Convex not configured" or the feed is empty,
 wait for Tab A to finish deploying, then refresh.
 
-Once the feed loads, seed the chips + run a smoke test:
+Once the feed loads, import current Google Trends chips:
 
-    pnpm seed:topics
-    pnpm smoke:topic
+    pnpm trends:google:import
 
 And set your Google key so Lyria + Gemini work for real:
 
