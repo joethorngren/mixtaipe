@@ -111,6 +111,53 @@ test.describe("Trending chips", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Sidebar nav — only Library / Hot List / Search are kept. Others were
+// removed because they pointed at duplicate or nonexistent anchors. These
+// tests lock in both the positive (what should be there) and the negative
+// (what should NOT be there) so nobody accidentally re-adds a broken link.
+// ---------------------------------------------------------------------------
+
+test.describe("Sidebar", () => {
+  const KEPT: Array<{ label: string; hash: string; anchorSelector: string }> = [
+    { label: "Library", hash: "#library", anchorSelector: "#library" },
+    { label: "Hot List", hash: "#hot-list", anchorSelector: "#hot-list" },
+    { label: "Search", hash: "#upload", anchorSelector: "#upload" },
+  ];
+  const REMOVED = ["Buddies", "Charts", "Chat Rooms", "Upload"];
+
+  test("renders exactly the 3 kept entries (Library, Hot List, Search)", async ({ page }) => {
+    await page.goto("/");
+    for (const { label } of KEPT) {
+      await expect(
+        page.getByRole("link", { name: new RegExp(label, "i") }),
+      ).toBeVisible();
+    }
+    for (const label of REMOVED) {
+      // getByRole scoped to the sidebar aside — some removed labels (like
+      // "Upload") happen to also appear as button text elsewhere on the
+      // page. Only the sidebar occurrences should be gone.
+      const sidebar = page.locator("aside").first();
+      await expect(sidebar.getByRole("link", { name: new RegExp(`^${label}$`, "i") })).toHaveCount(0);
+    }
+  });
+
+  for (const { label, hash, anchorSelector } of [
+    { label: "Library", hash: "#library", anchorSelector: "#library" },
+    { label: "Hot List", hash: "#hot-list", anchorSelector: "#hot-list" },
+    { label: "Search", hash: "#upload", anchorSelector: "#upload" },
+  ]) {
+    test(`"${label}" link navigates to ${hash} and the anchor target exists`, async ({ page }) => {
+      await page.goto("/");
+      // Target must exist before we click, otherwise the hash jump is a no-op.
+      await expect(page.locator(anchorSelector)).toBeAttached();
+
+      await page.getByRole("link", { name: new RegExp(label, "i") }).click();
+      await expect(page).toHaveURL(new RegExp(`${hash.replace("#", "\\#")}$`));
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // The demo loop: click a chip → new feed row → audio + critique attach
 // ---------------------------------------------------------------------------
 

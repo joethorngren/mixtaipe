@@ -149,14 +149,19 @@ function UnderConstruction() {
   );
 }
 
+// Only three sidebar entries are wired to real sections. The decorative ones
+// (Buddies / Charts / Chat Rooms / Upload) were removed — they either pointed
+// at duplicate anchors or at sections that no longer exist, which made the
+// sidebar feel broken during the demo.
+//
+// Anchor mapping (see components/Feed.tsx + components/LiveHome.tsx + StaticHome.tsx):
+//   #library  → the feed table (Feed.tsx)
+//   #hot-list → trending chips (LiveHome / StaticHome)
+//   #upload   → the SeedBox (LiveHome / StaticHome)  ← "Search" jumps here
 const CATEGORIES: Array<{ icon: string; label: string; href: string; badge?: string }> = [
   { icon: "📁", label: "Library", href: "#library" },
   { icon: "🔥", label: "Hot List", href: "#hot-list", badge: "LIVE" },
-  { icon: "👥", label: "Buddies", href: "#network" },
-  { icon: "📈", label: "Charts", href: "#library" },
   { icon: "🔎", label: "Search", href: "#upload" },
-  { icon: "💬", label: "Chat Rooms", href: "#network" },
-  { icon: "⬆", label: "Upload", href: "#upload" },
 ];
 
 function Sidebar() {
