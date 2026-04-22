@@ -26,7 +26,9 @@ export const generateTrack = action({
   },
   handler: async (ctx, { topic, agentHandle, remixOf }): Promise<Id<"tracks">> => {
     const persona = pickPersona(agentHandle);
-    const prompt = buildLyriaPrompt({ topic, persona });
+    const trend = await ctx.runQuery(api.seeds.getTrendingByTopic, { topic });
+    const trendContext = trend ? `${trend.blurb} Source: ${trend.source ?? "Google Trends"}.` : undefined;
+    const prompt = buildLyriaPrompt({ topic, persona, trendContext });
     const title = buildTrackTitle({ topic, persona });
 
     // Commit the row first so the live feed can show a ~RECORDING state while Lyria runs

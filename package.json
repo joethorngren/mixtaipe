@@ -10,6 +10,7 @@
     "convex:push": "convex dev --once",
     "convex:typecheck": "tsc -p convex/tsconfig.json",
     "trends:google": "node scripts/google-trends.mjs",
+    "trends:google:refresh": "convex run --prod trends:refreshGoogleTrends '{\"geo\":\"US\",\"limit\":10}'",
     "trends:google:import": "node scripts/google-trends.mjs --import --prod --replace --limit 10",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium"

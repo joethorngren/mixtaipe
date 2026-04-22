@@ -9,9 +9,11 @@
  */
 
 import type * as critique from "../critique.js";
+import type * as crons from "../crons.js";
 import type * as generate from "../generate.js";
 import type * as seeds from "../seeds.js";
 import type * as tracks from "../tracks.js";
+import type * as trends from "../trends.js";
 
 import type {
   ApiFromModules,
@@ -21,9 +23,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   critique: typeof critique;
+  crons: typeof crons;
   generate: typeof generate;
   seeds: typeof seeds;
   tracks: typeof tracks;
+  trends: typeof trends;
 }>;
 
 /**

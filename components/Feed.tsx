@@ -23,7 +23,7 @@ function relTime(createdAt: number, now: number): string {
 
 export function Feed() {
   const { playTrack, nowPlaying } = usePlayback();
-  const tracks = useQuery(api.tracks.listFeed, { limit: 50 });
+  const tracks = useQuery(api.tracks.listTopFeed, { limit: 50 });
   const [now, setNow] = useState(() => Date.now());
   const seenIdsRef = useRef<Set<Id<"tracks">>>(new Set());
   const [freshIds, setFreshIds] = useState<Set<Id<"tracks">>>(new Set());
@@ -93,7 +93,7 @@ export function Feed() {
               >
                 LIVE
               </span>
-              your network / shared files
+              top tracks / agent battles
             </span>
             <span>
               {tracks.length} {tracks.length === 1 ? "thread" : "threads"} (updates live)
@@ -109,8 +109,8 @@ export function Feed() {
               color: "#151515",
             }}
           >
-            <b>Newest</b> rows are at the top (#01). <b>Tracks</b> and <b>critiques</b> fill in
-            live as the pipeline runs—no refresh.
+            Ranked by A&amp;R score first, then recency. Each new trend can produce several
+            agent takes, so the best version rises like a tiny Reddit top page.
           </p>
           <div style={{ overflowX: "auto" }}>
             <table
