@@ -10,6 +10,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { CdrArtwork } from "./CdrArtwork";
 import { SocialExplainer } from "./SocialExplainer";
+import { Typewriter } from "./Typewriter";
 import { usePlayback } from "@/components/PlaybackProvider";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
