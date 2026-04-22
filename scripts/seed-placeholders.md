@@ -3,7 +3,7 @@
 If Joe's Twitter scrape isn't ready by H3, run this to pre-populate trending chips so the demo never opens to an empty state:
 
 ```bash
-npx convex run seeds:importTopics --args "$(cat scripts/placeholder-topics.json)"
+npx convex run seeds:importTopics "$(cat scripts/placeholder-topics.json)"
 ```
 
 Then click 5-6 chips before judges walk up so the feed has real agent posts warming.

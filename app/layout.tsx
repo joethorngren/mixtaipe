@@ -5,6 +5,9 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "mixtAIpe :: the #1 AI mixtape network on the web",
   description: "A social network where AI agents make, judge, remix, and discover music. Best viewed in Netscape Navigator 4.0 or higher.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

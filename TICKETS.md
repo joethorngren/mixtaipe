@@ -1,108 +1,175 @@
 # Tickets
 
-Also tracked in the TaskList (use `/tasks`). This file is the human-readable map.
+Use this as the live board. If a task is not on the demo path, do it only after the smoke test passes.
 
----
+## P0 — Bootstrap
 
-## Joe — backend + scrape
+### B1. Convex dev loop
+Owner: Joe
 
-### J1. `convex/schema.ts` — finalize tables
-- Scaffolded. Review field types, add anything you need.
-- Ensure indexes match query patterns in `tracks.ts` and `seeds.ts`.
+- Run `npx convex dev` and keep it open.
+- If the watcher is not running yet, run `pnpm convex:push` once before `convex run`.
+- Confirm `.env.local` has `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_DEPLOYMENT`.
+- Set Google API key in Convex with `npx convex env set GOOGLE_AI_API_KEY <key>`.
 
-### J2. `convex/generate.ts` — wire Lyria for real
-- Replace `callLyria` TODO with real HTTP call.
-- Verify endpoint: try Google AI Studio first (`generativelanguage.googleapis.com`), fall back to Vertex.
-- Store bytes in `ctx.storage.store(blob)` — already scaffolded.
-- Success criteria: `npx convex run generate:generateTrack --args '{"topic":"rainy tokyo"}'` returns an id and the feed shows a playable audio element.
+Done when: `pnpm convex:typecheck` passes and Convex dashboard shows functions deployed.
 
-### J3. `convex/critique.ts` — wire Gemini audio-in
-- Replace `callGemini` TODO with real call.
-- Use `gemini-2.5-pro` or `gemini-2.5-flash` with `inline_data` audio part.
-- Parse strict JSON response.
-- Success criteria: critique appears in the feed within 10s of the track landing.
+### B2. Local app loop
+Owner: Everyone
 
-### J4. Twitter scrape → `seeds.importTopics`
-- Any method you want (scrape, API, manual — last week's top 10).
-- Output: `[{topic, blurb, heat}, …]`
-- Import: `npx convex run seeds:importTopics --args '{"topics":[…]}'`
-- 10 topics minimum. Seed before demo starts.
+- Run `pnpm install`.
+- Run `pnpm dev`.
+- Open `http://localhost:3000`.
 
-### J5. Integration glue (H2 onward)
-- Unblock the team. Test the end-to-end loop. Fix whatever breaks.
+Done when: the app renders without “Convex not configured”.
 
----
+### B3. Seed demo topics
+Owner: Joe
 
-## Phillip — Y2K chrome (Cursor is your friend)
+- Run `pnpm seed:topics`.
+- Confirm the “hot this week” chips render.
 
-### P1. `components/NapsterChrome.tsx` — polish the frame
-- Scaffolded. Make it MORE Napster. Add a left-rail "categories" list (Genres, Charts, Favorites, Buddies).
-- Hit counter, guestbook link, "best viewed in IE 5.0" badge.
-- Under-construction GIF welcome.
+Done when: at least 10 chips are visible.
 
-### P2. `components/Winamp.tsx` — make it juicier
-- Real-ish animated visualizer bars reacting to `<audio>` (use `AudioContext` analyser if time; fake bars are fine for demo).
-- Scrolling song title tied to whatever track is currently playing.
+## P0 — End-To-End Demo
 
-### P3. `components/CdrArtwork.tsx` — unique per track
-- Currently renders "MIX" — make the scrawl reflect the track title (short snippet).
-- Optional: scribbled arrows, crossed-out misspellings.
+### E1. Smoke test the pipeline
+Owner: Joe + Pedro
 
-### P4. `app/globals.css` — Y2K polish pass
-- Guestbook, hit counter, "webring" footer, anchor color #0000EE underlined.
-- Star cursor is set. Add sparkle trail if you want to be extra.
+- Run `pnpm smoke:topic`.
+- Watch the feed update.
+- Confirm a track row appears.
+- Confirm audio controls appear.
+- Confirm a critique lands.
 
----
+Done when: seed -> playable audio -> critique works once from CLI and once from browser.
 
-## Pedro — feed + seed UI
+### E2. Browser click test
+Owner: Pedro
 
-### PE1. `app/providers.tsx` — verify ConvexProvider
-- Scaffolded. After Joe runs `npx convex dev`, pull `.env.local` and confirm the feed connects.
+- Type `tamagotchi funeral march` in the seed box.
+- Click one trending chip.
+- Confirm both produce rows.
 
-### PE2. `components/Feed.tsx` — make it live
-- Scaffolded. Critique column truncates at 180 chars with a "more" toggle.
-- Highlight newest track with a `blink` class for 3 seconds then fade out.
-- Keep Napster-table aesthetic — monospace, alternating row shading.
+Done when: no refresh is needed and the UI makes pending states clear.
 
-### PE3. `components/SeedBox.tsx` — add flavor
-- Scaffolded. Add 3–5 example prompts as a placeholder cycle (`setInterval` rotating the placeholder text).
-- On submit, show a cheeky "uploading to the swarm…" indicator.
+### E3. Demo rehearse
+Owner: Kevin
 
-### PE4. `components/TrendingChips.tsx` — Joe's data
-- Scaffolded. After Joe imports topics, verify chips render and clicking fires an agent post.
-- Sort by heat desc. Cap at 10.
+- Use `COMMAND_CENTER.md` script.
+- Pick the exact seed to type.
+- Pick the exact trend chip to click.
+- Time the demo once.
 
----
+Done when: the script fits under 90 seconds.
 
-## Kevin — agent voices + prompts
+## P1 — Backend Quality
 
-### K1. `lib/personas.ts` — 5 personas
-- Scaffolded with starters. Review and rewrite in your voice.
-- Each persona needs: handle, bio (1 line), tastePrompt (how they judge), aesthetic (Y2K flavor).
+### J1. Lyria real API path
+Owner: Joe
 
-### K2. `lib/prompts.ts` :: `buildLyriaPrompt`
-- Scaffolded. Tune until Lyria actually returns music that matches the persona.
-- Test loop: `npx convex run generate:generateTrack --args '{"topic":"X","agentHandle":"DJ_ShadowCore"}'`
+- Verify Google AI Studio Lyria endpoint and response shape.
+- Keep local WAV fallback intact.
+- Store returned bytes in Convex storage with the correct MIME type.
 
-### K3. `lib/prompts.ts` :: `CRITIC_SYSTEM_PROMPT`
-- Scaffolded. Lock the voice: late-90s IRC/AIM, all lowercase, abbreviations, references to Napster/Winamp/LimeWire/Kazaa.
-- Strict JSON output — test by running critique action after a track lands.
+Done when: real Lyria works, or fallback audio keeps the demo playable with a clear console warning.
 
-### K4. `lib/prompts.ts` :: `fakeTrackTitle`
-- Scaffolded. Make titles funnier, more mixtape-like. e.g. `xx_modem_summer.WAV` or `track03-final-FINAL-v2.mp3`.
+### J2. Gemini critique path
+Owner: Joe + Kevin
 
----
+- Verify `GOOGLE_AI_API_KEY` is available in Convex env.
+- Run critique against a stored audio file.
+- Confirm strict JSON parses.
 
-## Everyone — H2 integration + H3 polish
+Done when: critique appears within 15 seconds or fallback critique appears cleanly.
 
-### I1. E2E smoke test
-Seed a topic → track appears → audio plays → critique lands → scores render. If any step fails, fix it before moving on.
+### J3. Track query hygiene
+Owner: Joe
 
-### I2. Deploy to Vercel
-`vercel` → link → set env vars (`NEXT_PUBLIC_CONVEX_URL`, `CONVEX_DEPLOYMENT`, `GOOGLE_AI_API_KEY`) → prod promote.
+- Replace `critique.ts` lookup via `listFeed` with `api.tracks.getById`.
+- Remove any `any` needed only for the hacky lookup.
 
-### I3. Pre-populate the feed
-Joe runs the Twitter scrape import. Then click 5-8 trending chips to warm the feed with real agent posts. Judges open a live demo, not an empty state.
+Done when: typecheck passes and critique still lands.
 
-### I4. 90-second demo script
-Write the exact opening line, the exact seed prompt to type, the exact chip to click. Rehearse once.
+## P1 — Frontend Quality
+
+### PE1. Feed readability
+Owner: Pedro
+
+- Keep newest rows obvious.
+- Keep critique text readable.
+- Ensure pending audio/critique states look intentional.
+
+Done when: a judge can understand the feed without explanation.
+
+### PE2. Seed/trending UX
+Owner: Pedro
+
+- Prevent double-submits.
+- Show upload/progress state.
+- Make chip clicks visibly do something.
+
+Done when: two rapid demo interactions do not confuse the page.
+
+### PH1. First viewport polish
+Owner: Phillip
+
+- Make the page instantly read as Napster/Winamp/GeoCities.
+- Keep the main interaction visible.
+- Avoid layout shifts and text overlap.
+
+Done when: the page is funny but still usable.
+
+### PH2. Winamp/CD-R polish
+Owner: Phillip
+
+- Tie visual polish to actual tracks where practical.
+- Keep controls decorative unless needed for demo.
+
+Done when: the page looks demo-worthy on the presenting laptop.
+
+## P1 — Voice
+
+### K1. Personas
+Owner: Kevin
+
+- Make five agents distinct.
+- Preserve `handle`, `bio`, `tastePrompt`, `aesthetic`.
+
+Done when: track titles/prompts feel like different people made them.
+
+### K2. Producer prompt
+Owner: Kevin
+
+- Tune `buildLyriaPrompt` for 30-second instrumental sketches.
+- Keep prompts concrete and short enough for the API.
+
+Done when: prompt output sounds intentional for all five personas.
+
+### K3. Critic prompt
+Owner: Kevin
+
+- Preserve strict JSON.
+- Keep voice late-90s IRC/AIM.
+- Avoid modern slang.
+
+Done when: Gemini or fallback reviews are short, funny, and parseable.
+
+## P2 — Deploy
+
+### D1. Vercel deploy
+Owner: Joe
+
+- Link the project with `vercel`.
+- Set `NEXT_PUBLIC_CONVEX_URL`, `CONVEX_DEPLOYMENT`, and `GOOGLE_AI_API_KEY`.
+- Deploy production.
+
+Done when: production URL passes the browser click test.
+
+### D2. Warm production feed
+Owner: Joe + Pedro
+
+- Import topics in the production Convex deployment.
+- Click 5-8 chips before judges arrive.
+
+Done when: the live URL opens to a populated feed.

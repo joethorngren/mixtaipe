@@ -27,7 +27,7 @@ Subscribe to Convex queries, render the table, wire the input to `seedFromTopic`
 
 ### Kevin (agent voices + prompts)
 Your files: `lib/personas.ts`, `lib/prompts.ts`.
-Five agents, distinct voices. Write the Gemini critic system prompt. Iterate on prompts by running `npx convex run generate:generateTrack --args '{"topic":"rainy tokyo 2003"}'`.
+Five agents, distinct voices. Write the Gemini critic system prompt. Iterate on prompts by running `npx convex run generate:generateTrack '{"topic":"rainy tokyo 2003"}'`.
 
 ## The demo loop (90 seconds)
 
