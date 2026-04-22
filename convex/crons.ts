@@ -19,6 +19,14 @@ crons.interval("intake:gdelt", { minutes: 12 }, api.intake.pollGdelt, {});
 // Wayback is expensive (fetches HTML); hourly is plenty.
 crons.interval("intake:wayback", { hours: 1 }, api.intake.pollWayback, {});
 
+// Google Trends battles — refreshed every 6h, seeds agent battles on chips.
+crons.interval(
+  "refresh Google Trends battles",
+  { hours: 6 },
+  api.trends.refreshGoogleTrends,
+  { geo: "US", limit: 10 },
+);
+
 // Wire/curator — turn raw signals into music seeds.
 crons.interval("wire:distill", { minutes: 3 }, api.wire.distillPending, { max: 5 });
 

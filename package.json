@@ -9,10 +9,11 @@
     "convex": "convex dev",
     "convex:push": "convex dev --once",
     "convex:typecheck": "tsc -p convex/tsconfig.json",
-    "seed:topics": "convex run seeds:importTopics \"$(cat scripts/placeholder-topics.json)\"",
     "trends:google": "node scripts/google-trends.mjs",
+    "trends:google:refresh": "convex run --prod trends:refreshGoogleTrends '{\"geo\":\"US\",\"limit\":10}'",
     "trends:google:import": "node scripts/google-trends.mjs --import --prod --replace --limit 10",
-    "smoke:topic": "convex run seeds:seedFromTopic '{\"topic\":\"tamagotchi funeral march\"}'"
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "convex": "^1.17.4",
@@ -21,6 +22,7 @@
     "react-dom": "19.2.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^22.10.7",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

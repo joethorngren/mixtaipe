@@ -1,6 +1,10 @@
 import { v } from "convex/values";
 import { query, mutation, action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { PERSONAS } from "../lib/prompts";
+import type { Doc } from "./_generated/dataModel";
+
+const TREND_BATTLE_AGENT_COUNT = 3;
 
 // Kept in sync with schema.ts :: vibeValidator.
 const vibeArg = v.object({
@@ -35,6 +39,18 @@ export const listTrending = query({
       .withIndex("by_heat")
       .order("desc")
       .take(10);
+  },
+});
+
+export const getTrendingByTopic = query({
+  args: { topic: v.string() },
+  handler: async (ctx, { topic }) => {
+    const normalized = normalizeTopic(topic);
+    if (!normalized) return null;
+    return ctx.db
+      .query("trendingTopics")
+      .withIndex("by_topic", (q) => q.eq("topic", normalized))
+      .unique();
   },
 });
 
@@ -81,9 +97,13 @@ export const importTopics = mutation({
           firstSeenAt: existing.firstSeenAt ?? next.firstSeenAt ?? existing.scrapedAt,
         });
       } else {
-        await ctx.db.insert("trendingTopics", {
+        const trendId = await ctx.db.insert("trendingTopics", {
           ...next,
           firstSeenAt: next.firstSeenAt ?? now,
+        });
+        await ctx.scheduler.runAfter(0, api.seeds.seedTrendBattle, {
+          trendId,
+          agentCount: TREND_BATTLE_AGENT_COUNT,
         });
       }
     }
@@ -115,6 +135,41 @@ export const cacheVibeOnTopic = mutation({
       .unique();
     if (!row) return;
     await ctx.db.patch(row._id, { vibe, vibeEnrichedAt: Date.now() });
+  },
+});
+
+export const seedTrendBattle = action({
+  args: {
+    trendId: v.id("trendingTopics"),
+    agentCount: v.optional(v.number()),
+  },
+  handler: async (ctx, { trendId, agentCount = TREND_BATTLE_AGENT_COUNT }): Promise<null> => {
+    const trend: Doc<"trendingTopics"> | null = await ctx.runQuery(api.seeds.getTrendingById, { trendId });
+    if (!trend || trend.battleStartedAt) return null;
+    await ctx.runMutation(api.seeds.markBattleStarted, { trendId });
+
+    const handles = pickAgentHandles(trend.topic, agentCount);
+    for (let i = 0; i < handles.length; i++) {
+      await ctx.scheduler.runAfter(i * 2_000, api.seeds.seedFromTopic, {
+        topic: trend.topic,
+        agentHandle: handles[i],
+      });
+    }
+    return null;
+  },
+});
+
+export const getTrendingById = query({
+  args: { trendId: v.id("trendingTopics") },
+  handler: async (ctx, { trendId }) => {
+    return ctx.db.get(trendId);
+  },
+});
+
+export const markBattleStarted = mutation({
+  args: { trendId: v.id("trendingTopics") },
+  handler: async (ctx, { trendId }) => {
+    await ctx.db.patch(trendId, { battleStartedAt: Date.now() });
   },
 });
 
@@ -172,4 +227,23 @@ function normalizeTopic(topic: string): string {
 function clampHeat(heat: number): number {
   if (!Number.isFinite(heat)) return 1;
   return Math.max(1, Math.min(100, Math.round(heat)));
+}
+
+function pickAgentHandles(topic: string, count: number): string[] {
+  const max = Math.max(1, Math.min(PERSONAS.length, Math.round(count)));
+  const start = hashString(topic) % PERSONAS.length;
+  const handles: string[] = [];
+  for (let i = 0; i < PERSONAS.length && handles.length < max; i++) {
+    handles.push(PERSONAS[(start + i) % PERSONAS.length].handle);
+  }
+  return handles;
+}
+
+function hashString(text: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
 }
