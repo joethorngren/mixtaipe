@@ -28,7 +28,7 @@ type BeanampViewProps = {
  * See `public/winamp/README.md` for the image contract.
  */
 export function BeanampView({ roster: withAudioRaw }: BeanampViewProps) {
-  const { nowPlaying, playTrack, clear } = usePlayback();
+  const { nowPlaying, playTrack, clear, reportPlaying } = usePlayback();
   const withAudio = withAudioRaw;
   const firstWithAudio = withAudio[0] ?? null;
 
@@ -81,6 +81,10 @@ export function BeanampView({ roster: withAudioRaw }: BeanampViewProps) {
     if (!a) return;
     a.loop = repeatOne;
   }, [repeatOne]);
+
+  useEffect(() => {
+    reportPlaying(isPlaying);
+  }, [isPlaying, reportPlaying]);
 
   useEffect(() => {
     const a = audioRef.current;

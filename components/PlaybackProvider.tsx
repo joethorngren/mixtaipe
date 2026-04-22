@@ -19,15 +19,21 @@ export type NowPlaying = {
 
 type PlaybackContextValue = {
   nowPlaying: NowPlaying | null;
+  /** Mirrors the deck's actual <audio> element state; the Beanamp pushes this. */
+  isPlaying: boolean;
   /** Load this track into the global deck and start playback immediately. */
   playTrack: (t: NowPlaying) => void;
+  /** Eject the deck (stops audio and unloads the track). */
   clear: () => void;
+  /** Internal: called by the deck to report audio element play/pause state. */
+  reportPlaying: (playing: boolean) => void;
 };
 
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const playTrack = useCallback((t: NowPlaying) => {
     setNowPlaying(t);
@@ -35,11 +41,16 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => {
     setNowPlaying(null);
+    setIsPlaying(false);
+  }, []);
+
+  const reportPlaying = useCallback((playing: boolean) => {
+    setIsPlaying(playing);
   }, []);
 
   const value = useMemo(
-    () => ({ nowPlaying, playTrack, clear }),
-    [nowPlaying, playTrack, clear],
+    () => ({ nowPlaying, isPlaying, playTrack, clear, reportPlaying }),
+    [nowPlaying, isPlaying, playTrack, clear, reportPlaying],
   );
 
   return (

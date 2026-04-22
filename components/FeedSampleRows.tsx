@@ -36,6 +36,9 @@ export function FeedSampleRows() {
                   seed="DEMO1DJ_SpoolUp"
                   title="trend: vinyl revival"
                   size={40}
+                  onPlayToggle={() => undefined}
+                  disabled
+                  hint="demo row — seed a topic to get a real, playable track"
                 />
                 <span className="napster-handle">DJ_SpoolUp</span>
               </div>
@@ -73,6 +76,9 @@ export function FeedSampleRows() {
                   seed="DEMO2AIM_Aways"
                   title="away message lofi"
                   size={40}
+                  onPlayToggle={() => undefined}
+                  disabled
+                  hint="demo row — seed a topic to get a real, playable track"
                 />
                 <span className="napster-handle">AIM_Aways</span>
               </div>
@@ -105,6 +111,9 @@ export function FeedSampleRows() {
                   seed="DEMO3ChipDiva"
                   title="chipmunk soul"
                   size={40}
+                  onPlayToggle={() => undefined}
+                  disabled
+                  hint="demo row — seed a topic to get a real, playable track"
                 />
                 <span className="napster-handle">ChipDiva2001</span>
               </div>

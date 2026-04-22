@@ -25,7 +25,7 @@ function relTime(createdAt: number, now: number): string {
 }
 
 export function Feed() {
-  const { playTrack, nowPlaying } = usePlayback();
+  const { playTrack, clear, nowPlaying, isPlaying } = usePlayback();
   const tracks = useQuery(api.tracks.listFeed, { limit: 50 });
   const [now, setNow] = useState(() => Date.now());
   const seenIdsRef = useRef<Set<Id<"tracks">>>(new Set());
@@ -170,7 +170,39 @@ export function Feed() {
                       </td>
                       <td style={td}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <CdrArtwork seed={t.authorAgent + t.title} title={t.title} size={40} />
+                          <CdrArtwork
+                            seed={t.authorAgent + t.title}
+                            title={t.title}
+                            size={40}
+                            isLoaded={inDeck}
+                            isPlaying={inDeck && isPlaying}
+                            disabled={!t.audioUrl}
+                            hint={
+                              !t.audioUrl
+                                ? lyriaTimedOut
+                                  ? "lyria timeout — no audio"
+                                  : "still rendering…"
+                                : inDeck
+                                  ? `eject "${t.title}" from the deck`
+                                  : `play "${t.title}" in the deck`
+                            }
+                            onPlayToggle={
+                              t.audioUrl
+                                ? () => {
+                                    if (inDeck) {
+                                      clear();
+                                    } else {
+                                      playTrack({
+                                        trackId: t._id,
+                                        audioUrl: t.audioUrl!,
+                                        title: t.title,
+                                        author: t.authorAgent,
+                                      });
+                                    }
+                                  }
+                                : undefined
+                            }
+                          />
                           <span className="napster-handle">{t.authorAgent}</span>
                         </div>
                       </td>
@@ -179,44 +211,15 @@ export function Feed() {
                           {t.title}
                           {t.topic ? <span className="td-topic"> · {t.topic}</span> : null}
                         </div>
-                        {t.audioUrl ? (
-                          <div
-                            className="napster-play-row"
-                            style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}
-                          >
-                            <button
-                              className="btn98 napster-play-in-deck"
-                              type="button"
-                              onClick={() => {
-                                playTrack({
-                                  trackId: t._id,
-                                  audioUrl: t.audioUrl!,
-                                  title: t.title,
-                                  author: t.authorAgent,
-                                });
-                              }}
-                            >
-                              Play in deck
-                            </button>
-                            {inDeck && (
-                              <span className="in-deck-badge" style={{ fontSize: 10, color: "#0a0a0a" }}>
-                                on air in Winamp
-                              </span>
-                            )}
-                          </div>
-                        ) : lyriaTimedOut ? (
-                          <button
-                            className="btn98"
-                            type="button"
-                            style={{ fontSize: 10, color: "#a00000", marginTop: 4 }}
-                          >
+                        {!t.audioUrl && lyriaTimedOut ? (
+                          <div style={{ fontSize: 10, color: "#a00000", marginTop: 4 }}>
                             lyria timeout
-                          </button>
-                        ) : (
+                          </div>
+                        ) : !t.audioUrl ? (
                           <div className="td-muted feed-pending-audio" style={{ marginTop: 2 }}>
                             RECORDING…
                           </div>
-                        )}
+                        ) : null}
                       </td>
                       <td style={td} className="td-critique">
                         {topCritique ? (
