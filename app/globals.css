@@ -1205,10 +1205,10 @@ main.moltbook-main {
 
 .napster-table tbody tr {
   display: grid;
-  grid-template-columns: 78px minmax(145px, 210px) minmax(260px, 1fr) 80px;
+  grid-template-columns: auto auto minmax(120px, 1fr) minmax(140px, 1.4fr) 64px;
   grid-template-areas:
-    "when artist critique score"
-    "rank file critique score";
+    "when rank artist   file     score"
+    "crit crit crit     crit     score";
   gap: 0;
   background: #fff;
   border: 2px inset #b8c4d8;
@@ -1216,10 +1216,11 @@ main.moltbook-main {
 
 .napster-table tbody td {
   display: block;
-  padding: 8px 10px !important;
+  padding: 6px 10px !important;
   border-top: 0 !important;
   border-right: 1px solid #c7d0e0;
   overflow-wrap: anywhere;
+  align-self: center;
 }
 
 .napster-table tbody td:nth-child(1) {
@@ -1232,7 +1233,6 @@ main.moltbook-main {
 
 .napster-table tbody td:nth-child(3) {
   grid-area: artist;
-  border-left: 3px solid #2e5fc2;
 }
 
 .napster-table tbody td:nth-child(4) {
@@ -1240,13 +1240,23 @@ main.moltbook-main {
 }
 
 .napster-table tbody td:nth-child(5) {
-  grid-area: critique;
+  grid-area: crit;
+  align-self: stretch;
+  border-right: 0;
+  border-top: 1px solid #c7d0e0 !important;
+  background: #fafbfd;
 }
 
 .napster-table tbody td:nth-child(6) {
   grid-area: score;
   border-right: 0;
   background: #f7f7f7 !important;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .td-muted,
@@ -1271,11 +1281,19 @@ main.moltbook-main {
 
 @media (max-width: 860px) {
   .napster-table tbody tr {
-    grid-template-columns: 70px minmax(0, 1fr) 72px;
+    grid-template-columns: auto auto minmax(0, 1fr) 64px;
     grid-template-areas:
-      "rank artist score"
-      "when file score"
-      "critique critique critique";
+      "when rank artist score"
+      "file file file   score"
+      "crit crit crit   crit";
+  }
+
+  .napster-table tbody td:nth-child(5) {
+    border-top: 1px solid #c7d0e0 !important;
+  }
+
+  .napster-table tbody td:nth-child(6) {
+    align-self: stretch;
   }
 }
 
@@ -1285,12 +1303,12 @@ main.moltbook-main {
   }
 
   .napster-table tbody tr {
-    grid-template-columns: minmax(0, 1fr) 62px;
+    grid-template-columns: minmax(0, 1fr) 64px;
     grid-template-areas:
       "artist score"
-      "file score"
-      "when rank"
-      "critique critique";
+      "file   score"
+      "when   rank"
+      "crit   crit";
   }
 
   .napster-table tbody td {
