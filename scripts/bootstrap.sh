@@ -2,12 +2,19 @@
 # ============================================================================
 # bootstrap.sh — one-shot setup for mixtAIpe on macOS.
 #
-# Paste this to run:
-#   bash /Users/kevinandreosky/Projects/mixtaipe/scripts/bootstrap.sh
+# Usage (from inside the repo):
+#   bash scripts/bootstrap.sh
+#
+# Or from anywhere (uses the script's own location, not your CWD):
+#   bash /path/to/mixtaipe/scripts/bootstrap.sh
 #
 # What it does:
 #   1. Switch to Node 22 via nvm (installs nvm if missing).
-#   2. Wipe + reinstall node_modules with pnpm.
+#   2. Wipe + reinstall node_modules with pnpm. Intentional wipe: if deps
+#      were previously installed under a different Node major (e.g. the
+#      Homebrew Node 25 that triggered the DeploymentNotConfiguredForNodeActions
+#      error this script was written for), cached native bindings can segfault
+#      under Node 22. A clean install is cheap insurance.
 #   3. Open a new Terminal tab running `npx convex dev`   (keep this running).
 #   4. Open a new Terminal tab running `pnpm dev`         (keep this running).
 #   5. Open http://localhost:3000 in your browser.
@@ -19,7 +26,9 @@
 
 set -euo pipefail
 
-PROJECT_DIR="/Users/kevinandreosky/Projects/mixtaipe"
+# --- Resolve repo root from the script's own location (clone-portable) ------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 NODE_VERSION="22"
 
 cd "$PROJECT_DIR"
@@ -27,7 +36,7 @@ cd "$PROJECT_DIR"
 # --- 1. nvm + Node 22 --------------------------------------------------------
 if [ ! -s "$HOME/.nvm/nvm.sh" ]; then
   echo "==> nvm not found — installing via scripts/install-nvm.sh"
-  bash "$PROJECT_DIR/scripts/install-nvm.sh"
+  bash "$SCRIPT_DIR/install-nvm.sh"
 fi
 
 export NVM_DIR="$HOME/.nvm"
@@ -48,14 +57,16 @@ if ! command -v pnpm >/dev/null 2>&1; then
   npm i -g pnpm
 fi
 
-echo "==> Wiping node_modules + reinstalling..."
+echo "==> Wiping node_modules + reinstalling (see header for why)..."
 rm -rf node_modules
 pnpm install
 
 # --- 3+4. Launch Convex dev + Next dev in new Terminal tabs ------------------
-# New Terminal tabs auto-load ~/.zshrc, which nvm's installer already appended
-# itself to. Since `nvm alias default 22` was set, new tabs start on Node 22.
-# So the commands for each tab are just the cd + the long-running command.
+# Each spawned tab explicitly sources nvm and pins Node ${NODE_VERSION}. We do
+# not trust that new Terminal tabs inherit the parent's Node — they don't, and
+# if the user's ~/.zshrc doesn't load nvm (or loads a different default), the
+# dev loop silently breaks. Being explicit here is the whole point of a
+# bootstrap script.
 
 open_tab() {
   # Write the command to a tempfile to avoid AppleScript quoting hell.
@@ -64,6 +75,10 @@ open_tab() {
   script="$(mktemp -t mixtaipe_tab)"
   {
     echo "#!/usr/bin/env bash"
+    echo "set -euo pipefail"
+    echo "export NVM_DIR=\"\$HOME/.nvm\""
+    echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\""
+    echo "nvm use ${NODE_VERSION} >/dev/null"
     echo "cd \"$PROJECT_DIR\""
     echo "$cmd"
   } >"$script"
