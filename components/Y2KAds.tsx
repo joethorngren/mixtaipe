@@ -1,18 +1,37 @@
+"use client";
+
 /**
  * Static, fake Y2K-era banner ads. No network, no rotation logic, no tracking —
  * just hand-rolled tacky chrome so the page feels 1999. Intentionally avoids
  * anything AOL-shaped (no "You've got mail!", no free-trial CDs).
  *
  * Three shapes:
- *   - <LeaderboardAd />     ~468x60, slots under the browser-badges row
+ *   - <LeaderboardAd />     ~468x60, slots under the browser-badges row.
+ *                           Clicking it switches the page cursor to a boxing
+ *                           glove for ~1.5s (see app/globals.css →
+ *                           body[data-punching="1"] rule).
  *   - <SkyscraperAds />     vertical 160-wide stack, slots under the sidebar
  *   - <FooterBannerAds />   pair of small banners above the footer
  */
 
+const PUNCH_MS = 1500;
+
 export function LeaderboardAd() {
+  function handlePunch(e: React.MouseEvent<HTMLAnchorElement>) {
+    // Keep the `#ad-monkey` href for no-JS fallback, but in the browser we
+    // never want to actually navigate — the ad is a joke.
+    e.preventDefault();
+    document.body.setAttribute("data-punching", "1");
+    window.setTimeout(() => {
+      document.body.removeAttribute("data-punching");
+    }, PUNCH_MS);
+  }
+
   return (
     <a
       href="#ad-monkey"
+      onClick={handlePunch}
+      data-testid="punch-the-monkey"
       aria-label="Punch the monkey, win a free iMac (fake ad)"
       style={{
         display: "flex",

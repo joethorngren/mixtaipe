@@ -20,6 +20,19 @@ body {
   font-family: "Courier New", Courier, monospace;
 }
 
+/*
+ * Boxing glove cursor — applied globally for ~1.5s after the user clicks the
+ * PUNCH THE MONKEY banner. Uses an inline SVG data URI so we don't ship a
+ * binary asset. 16 16 is the hotspot — roughly the knuckles.
+ */
+body[data-punching="1"],
+body[data-punching="1"] * {
+  cursor:
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36"><g stroke="%23000" stroke-width="1.8" stroke-linejoin="round"><ellipse cx="19" cy="19" rx="12" ry="11" fill="%23c0211c"/><ellipse cx="8" cy="17" rx="4.5" ry="5.5" fill="%23c0211c"/><rect x="11" y="26" width="16" height="6" fill="%23ffffff"/><ellipse cx="16" cy="14" rx="2.5" ry="1.8" fill="%23e85a4f" stroke="none"/><ellipse cx="22" cy="18" rx="2" ry="1.4" fill="%23e85a4f" stroke="none"/></g></svg>')
+      16 16,
+    pointer !important;
+}
+
 .btn98 {
   background: var(--silver98);
   border-top: 2px solid #ffffff;
