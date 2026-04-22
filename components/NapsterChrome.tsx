@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { FooterBannerAds, LeaderboardAd, SkyscraperAds } from "@/components/Y2KAds";
 
 export function NapsterChrome({ children }: { children: ReactNode }) {
   return (
@@ -16,13 +17,18 @@ export function NapsterChrome({ children }: { children: ReactNode }) {
         <div style={{ padding: 16, background: "#c0c0c0" }}>
           <Banner />
           <BrowserBadges />
+          <LeaderboardAd />
           <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, marginTop: 12 }}>
-            <Sidebar />
+            <div style={{ display: "grid", gap: 10, alignSelf: "start" }}>
+              <Sidebar />
+              <SkyscraperAds />
+            </div>
             <main className="moltbook-main" style={{ minWidth: 0 }}>
               <UnderConstruction />
               {children}
             </main>
           </div>
+          <FooterBannerAds />
           <Webring />
           <Footer />
         </div>
