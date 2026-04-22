@@ -160,6 +160,144 @@ test.describe("Demo loop", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Buttons — every clickable surface a judge will touch during the demo.
+// Chip click is covered in "Demo loop" above. This block covers:
+//   - SeedBox upload button (full submit flow, not just typing)
+//   - Enter-to-submit on SeedBox (same flow, different input path)
+//   - "Play in deck" row buttons (Beanamp deck source swap)
+// ---------------------------------------------------------------------------
+
+test.describe("Buttons", () => {
+  test("SeedBox upload button submits the typed topic and produces a feed row", async ({ page }) => {
+    await seedTopicsIfMissing(page);
+    await page.goto("/");
+
+    // Use a unique-per-run topic so repeat runs don't confuse the "our row"
+    // filter below.
+    const topic = `e2e-btn-${Date.now()}`;
+    const input = page.getByRole("textbox").first();
+    await input.fill(topic);
+
+    const rowsBefore = await page.locator(FEED_ROW).count();
+
+    // Button is labeled "upload" when idle, "sending…" while the action runs.
+    // Match by accessible name; disabled transitions are auto-waited by
+    // Playwright.
+    const uploadBtn = page.getByRole("button", { name: /^upload$/i });
+    await expect(uploadBtn).toBeEnabled();
+    await uploadBtn.click();
+
+    // Input clears on successful submit (SeedBox.submit sets topic="").
+    await expect(input).toHaveValue("", { timeout: 10_000 });
+
+    await expect
+      .poll(() => page.locator(FEED_ROW).count(), { timeout: 20_000 })
+      .toBeGreaterThan(rowsBefore);
+
+    // The row we created should be locatable by our unique topic.
+    const ourRow = page
+      .locator(FEED_ROW)
+      .filter({ hasText: new RegExp(topic.replace(/-/g, "[-_]"), "i") })
+      .first();
+    await expect(ourRow).toBeVisible({ timeout: 10_000 });
+    await expect(ourRow).toContainText(/\.mp3/i);
+  });
+
+  test("Enter key in SeedBox submits just like the upload button", async ({ page }) => {
+    await seedTopicsIfMissing(page);
+    await page.goto("/");
+
+    const topic = `e2e-enter-${Date.now()}`;
+    const input = page.getByRole("textbox").first();
+    await input.fill(topic);
+
+    const rowsBefore = await page.locator(FEED_ROW).count();
+    await input.press("Enter");
+
+    await expect
+      .poll(() => page.locator(FEED_ROW).count(), { timeout: 20_000 })
+      .toBeGreaterThan(rowsBefore);
+
+    const ourRow = page
+      .locator(FEED_ROW)
+      .filter({ hasText: new RegExp(topic.replace(/-/g, "[-_]"), "i") })
+      .first();
+    await expect(ourRow).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("empty submit is a no-op (no new row, no crash)", async ({ page }) => {
+    await seedTopicsIfMissing(page);
+    await page.goto("/");
+
+    const input = page.getByRole("textbox").first();
+    await input.fill("");
+
+    // Stabilize first: a reactive-feed row from the previous test may still
+    // be propagating. Wait until the row count hasn't changed for ~800ms,
+    // then capture the baseline. This avoids a flake where the "no-op"
+    // submit races with a late-landing row from a prior test.
+    const rowsBefore = await stableRowCount(page);
+    await input.press("Enter");
+
+    // Give the action a second to NOT fire.
+    await page.waitForTimeout(1_000);
+    const rowsAfter = await page.locator(FEED_ROW).count();
+    expect(rowsAfter).toBe(rowsBefore);
+  });
+
+  test("every feed row exposes a 'Play in deck' button, and clicking one loads that track", async ({ page }) => {
+    // Make sure the feed has at least one row to play.
+    await ensureAtLeastOneTrack(page);
+    await page.goto("/");
+
+    const rows = page.locator(FEED_ROW);
+    await expect(rows.first()).toBeVisible({ timeout: 10_000 });
+    const rowCount = await rows.count();
+    expect(rowCount).toBeGreaterThan(0);
+
+    // Every row has its own play button.
+    const playButtons = page.getByRole("button", { name: /play in deck/i });
+    await expect
+      .poll(() => playButtons.count(), { timeout: 5_000 })
+      .toBeGreaterThanOrEqual(rowCount);
+
+    // Snapshot current deck source, then click Play on a row and assert the
+    // deck's <audio src> becomes the Convex storage URL for some track.
+    // Beanamp is a single shared deck, so the one <audio> in the DOM is the
+    // source of truth.
+    const audio = page.locator("audio").first();
+    await expect(audio).toBeAttached();
+    const srcBefore = await audio.getAttribute("src").catch(() => null);
+
+    await playButtons.first().click();
+
+    // After click the deck should be pointed at a Convex storage URL. We
+    // don't care which one (just that the button wired through to the deck).
+    await expect
+      .poll(async () => (await audio.getAttribute("src")) ?? "", {
+        timeout: 10_000,
+      })
+      .toMatch(/\/api\/storage\//);
+
+    // If there was a prior src, the new one is either the same (clicked the
+    // already-loaded track) or different (source swapped). Either is legal
+    // — the assertion above proves the button wired to the deck. We only
+    // record a note when the row count is >1 and srcBefore existed but the
+    // new click didn't change anything — that would suggest a silent bug.
+    const srcAfter = await audio.getAttribute("src");
+    if (srcBefore && rowCount > 1 && srcAfter === srcBefore) {
+      // Click a different row to prove source-swap works end-to-end.
+      await playButtons.nth(1).click();
+      await expect
+        .poll(async () => (await audio.getAttribute("src")) ?? "", {
+          timeout: 10_000,
+        })
+        .not.toBe(srcBefore);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Convex pipeline contract — JSON shape that the critic prompt + coerceCritique
 // depend on. If this breaks, Gemini JSON output will fail to parse in prod.
 // ---------------------------------------------------------------------------
@@ -232,15 +370,56 @@ async function getChipHeats(page: Page): Promise<number[]> {
 }
 
 /**
- * Seed the topic list only if it looks empty. Idempotent. Keeps test runs
- * from double-seeding the same rows on every invocation.
+ * Seed the topic list only if it's truly empty. Checks the Convex DB
+ * directly rather than reading the DOM (the DOM may not have hydrated yet,
+ * and `seeds:importTopics` throws on duplicates because it uses .unique()).
+ * Swallows the importTopics error so a partially-seeded DB doesn't poison
+ * the whole test run.
  */
 async function seedTopicsIfMissing(page: Page) {
-  await page.goto("/");
-  const count = (await getChipHeats(page)).length;
-  if (count === 0) {
-    execSync("pnpm seed:topics", { stdio: "inherit" });
+  const topics = convexRun<Array<unknown>>("seeds:listTrending", {});
+  if (topics.length === 0) {
+    try {
+      execSync("pnpm seed:topics", { stdio: "pipe" });
+    } catch (err) {
+      // Expected when prior runs left partial data behind — seeds:importTopics
+      // uses .unique() per topic and throws on duplicates. We only care that
+      // at least one topic exists by the time the page renders.
+      console.warn(
+        "[e2e] seeds:importTopics threw (likely duplicate topics); continuing",
+      );
+    }
     // Let the reactive query flush.
+    await page.waitForTimeout(500);
+  }
+}
+
+/**
+ * Poll the feed's row count until it hasn't changed for two consecutive
+ * reads (~800ms apart). Returns the stable count. Used to defeat the race
+ * where a prior test's reactive-feed write is still propagating.
+ */
+async function stableRowCount(page: Page, settleMs = 800, maxWaitMs = 5_000): Promise<number> {
+  const start = Date.now();
+  let prev = await page.locator(FEED_ROW).count();
+  while (Date.now() - start < maxWaitMs) {
+    await page.waitForTimeout(settleMs);
+    const cur = await page.locator(FEED_ROW).count();
+    if (cur === prev) return cur;
+    prev = cur;
+  }
+  return prev;
+}
+
+/**
+ * Make sure the feed has at least one row. If empty, seed one via the
+ * Convex CLI so the Play-in-deck test always has something to click.
+ */
+async function ensureAtLeastOneTrack(page: Page) {
+  const existing = convexRun<FeedRow[]>("tracks:listFeed", { limit: 1 });
+  if (existing.length === 0) {
+    convexRun("seeds:seedFromTopic", { topic: `e2e-bootstrap-${Date.now()}` });
+    // Reactive query needs a tick to propagate to the browser.
     await page.waitForTimeout(500);
   }
 }
