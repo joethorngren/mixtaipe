@@ -187,9 +187,6 @@ test.describe("Buttons", () => {
     await expect(uploadBtn).toBeEnabled();
     await uploadBtn.click();
 
-    // Input clears on successful submit (SeedBox.submit sets topic="").
-    await expect(input).toHaveValue("", { timeout: 10_000 });
-
     await expect
       .poll(() => page.locator(FEED_ROW).count(), { timeout: 20_000 })
       .toBeGreaterThan(rowsBefore);
@@ -201,6 +198,12 @@ test.describe("Buttons", () => {
       .first();
     await expect(ourRow).toBeVisible({ timeout: 10_000 });
     await expect(ourRow).toContainText(/\.mp3/i);
+
+    // The row appears before the full action returns; SeedBox clears only
+    // after the generation action resolves, which can be slower when Lyria
+    // endpoint probing falls back.
+    await expect(uploadBtn).toBeEnabled({ timeout: 60_000 });
+    await expect(input).toHaveValue("");
   });
 
   test("Enter key in SeedBox submits just like the upload button", async ({ page }) => {
