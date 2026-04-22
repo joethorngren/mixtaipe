@@ -1,5 +1,56 @@
 // Human-readable labels for wire / trend ingest sources (matches convex/signals, trends importers).
 
+export type FeedSourceInspiration = {
+  source: string;
+  title: string;
+  musicSeed?: string;
+  url?: string;
+};
+
+export type FeedTrendProvenance = {
+  source?: string;
+  sourceUrl?: string;
+  blurb: string;
+};
+
+/**
+ * `listFeed` denormalizes wire + trend chips into `sourceInspiration` / `trendProvenance`.
+ * Stored `trendIngest*` on the track (if present) wins so we do not double-hit the DB later.
+ */
+export function resolveInspirationForFeedRow(track: {
+  trendIngestSource?: string;
+  trendIngestUrl?: string;
+  trendIngestSummary?: string;
+  sourceInspiration?: FeedSourceInspiration | null;
+  trendProvenance?: FeedTrendProvenance | null;
+}): { source?: string; url?: string; summary?: string } | null {
+  if (track.trendIngestSource || track.trendIngestSummary) {
+    return {
+      source: track.trendIngestSource,
+      url: track.trendIngestUrl,
+      summary: track.trendIngestSummary,
+    };
+  }
+  if (track.sourceInspiration) {
+    const si = track.sourceInspiration;
+    const seed =
+      si.musicSeed?.trim() && si.musicSeed.trim() !== si.title.trim()
+        ? si.musicSeed.trim()
+        : undefined;
+    const summary = seed ? `${si.title} → wire distill: ${seed}` : si.title;
+    return { source: si.source, url: si.url, summary };
+  }
+  if (track.trendProvenance) {
+    const tp = track.trendProvenance;
+    return {
+      source: tp.source ?? "google-trends",
+      url: tp.sourceUrl,
+      summary: tp.blurb,
+    };
+  }
+  return null;
+}
+
 export function humanizeIngestSource(source: string | undefined): string {
   if (!source || !source.trim()) return "the wire";
   const s = source.trim().toLowerCase();
