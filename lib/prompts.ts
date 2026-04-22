@@ -23,8 +23,12 @@ export function pickPersona(handle?: string): Persona {
 
 // ---------- Producer side ----------------------------------------------------
 
-export function buildLyriaPrompt(args: { topic: string; persona: Persona }): string {
-  const { topic, persona } = args;
+export function buildLyriaPrompt(args: {
+  topic: string;
+  persona: Persona;
+  trendContext?: string;
+}): string {
+  const { topic, persona, trendContext } = args;
   // Lyria does best when you lead with concrete musical direction, then give
   // the mood/theme as flavor. Persona's tastePrompt already encodes BPM +
   // instruments + dynamics, so we lean on it directly. Keep it short — every
@@ -32,12 +36,15 @@ export function buildLyriaPrompt(args: { topic: string; persona: Persona }): str
   return [
     `30-second instrumental sketch, late-90s / early-2000s burned-CD mixtape energy.`,
     `Theme seed: "${topic}".`,
+    trendContext ? `Trend context: ${trendContext}` : null,
+    `Translate the trend literally into sound: preserve place, sport, celebrity, film, language, and mood cues as instrumentation, rhythm, harmony, texture, and tempo.`,
+    `If the trend suggests Spain, Barcelona, Espanyol, Atlético, LaLiga, or Catalan/Spanish football: use stadium drum energy, palmas-style claps, nylon-string guitar flourishes, Phrygian/Andalusian color, and chant-like melodic shapes without voices.`,
     `Sound palette: ${persona.tastePrompt}`,
     `Scene: ${persona.aesthetic}.`,
     `Structure: grab the listener in the first 4 bars with a clear rhythmic hook; one melodic idea developed, not layered; leave headroom for tape hiss.`,
     `Production: feels hand-burned, slightly lo-fi, room-miked rather than polished.`,
     `Strict: no vocals, no lyrics, no speech, no vocal samples, no choir pads.`,
-  ].join(" ");
+  ].filter(Boolean).join(" ");
 }
 
 // Y2K-flavored filename: e.g. "dj_shadowcore - rainy_tokyo_2003 (track 04).mp3"

@@ -50,6 +50,7 @@ export default defineSchema({
     topic: v.string(),
     blurb: v.string(),
     heat: v.number(), // 0-100
+    battleStartedAt: v.optional(v.number()),
     source: v.optional(v.string()),
     sourceUrl: v.optional(v.string()),
     mentions: v.optional(v.number()),

@@ -9,27 +9,25 @@ export function SocialExplainer() {
       </b>
       <p style={{ margin: "0 0 6px" }}>
         <b>AI musician agents</b> share 30s sketches. <b>Humans</b> (you) and{" "}
-        <b>Google Trends</b> set the mood. A <b>producer</b> agent renders audio; a{" "}
-        <b>juror A&amp;R</b> agent roasts the mix and posts scores. Everything lands in
-        the same public <b>live list</b>—no manual refresh, new rows and critiques
-        show up as the backend finishes.
+        <b>Google Trends</b> set the mood. When a fresh trend lands, several{" "}
+        <b>producer agents</b> take a shot at it. A <b>juror A&amp;R</b> agent roasts each
+        mix and posts scores, then the feed ranks the strongest takes first.
       </p>
       <ul
         className="explainer-steps"
         style={{ margin: 0, paddingLeft: 20, fontSize: 11, color: "#1a1a1a" }}
       >
         <li>
-          <b>Seed</b> a line or <b>click a trend</b> → a random producer drops a new row.
+          <b>Import trends</b> → three producer agents battle over each new trend.
+        </li>
+        <li>
+          <b>Click a trend</b> or <b>seed a line</b> → one extra producer takes a swing.
         </li>
         <li>
           <b>Render</b> (Lyria) fills in the .mp3 cell when ready.
         </li>
         <li>
-          <b>Judge</b> (Gemini) fills the A&amp;R col with snark + numbers.
-        </li>
-        <li>
-          <b>Watch</b> the table update; Winamp in the corner follows the last playable
-          file.
+          <b>Judge</b> (Gemini) scores it; higher-rated tracks rise up the list.
         </li>
       </ul>
     </div>

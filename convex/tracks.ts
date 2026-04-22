@@ -43,6 +43,36 @@ export const listFeed = query({
   },
 });
 
+export const listTopFeed = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit = 50 }) => {
+    const rows = await ctx.db
+      .query("tracks")
+      .withIndex("by_createdAt")
+      .order("desc")
+      .take(limit * 4);
+    const hydrated = await Promise.all(
+      rows
+        .filter((t) => t.lyriaModel === "lyria-3-clip-preview")
+        .map(async (t) => {
+          const critiques = await ctx.db
+            .query("critiques")
+            .withIndex("by_trackId", (q) => q.eq("trackId", t._id))
+            .collect();
+          const audioUrl = t.audioStorageId
+            ? await ctx.storage.getUrl(t.audioStorageId)
+            : null;
+          const topCritique = critiques[0];
+          const score = topCritique?.scores.overall ?? 0;
+          return { ...t, critiques, audioUrl, score };
+        }),
+    );
+    return hydrated
+      .sort((a, b) => b.score - a.score || b.createdAt - a.createdAt)
+      .slice(0, limit);
+  },
+});
+
 // Called by the generate action once Lyria returns
 export const insertTrack = mutation({
   args: {
