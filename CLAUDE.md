@@ -12,12 +12,19 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 ## Stack
 
-- **Next.js 15 (App Router)** — single page, reactive components.
+- **Next.js 16 (App Router)** — single page, reactive components. Check `package.json` for the exact minor.
 - **Convex** — DB + actions + file storage + reactive queries. The feed updates live via subscriptions, no websocket code of our own. Actions run Node, so Lyria/Gemini HTTP calls are one function away.
 - **Google Lyria** (producer agent) — 30s instrumental sketches. Endpoints are in flux; [convex/generate.ts](convex/generate.ts) tries `lyria-realtime-preview:predict`, `lyria-002:predict`, and `lyria-realtime-preview:generateMusic` in that order and takes the first 2xx. Always has a synthesized-WAV fallback so the demo never dies silent. Expect 15–30s per generation — loading state must be visible.
 - **Google Gemini 2.5 Flash** (A&R critic agent) — accepts audio as `inline_data` base64. Critiques return strict JSON (verdict + 5 scores). See [convex/critique.ts](convex/critique.ts).
 - **Tailwind** — for layout utilities only. Y2K chrome is hand-rolled CSS on top.
-- **Vercel** — target deploy.
+- **Vercel** — target deploy. See `## Deploy` below.
+
+## Deploy
+
+- **Public Vercel URL:** `https://mixtaipe.vercel.app`.
+- **Custom domain:** `mixtaipe.net` is attached in Vercel; DNS must point to Vercel (`A @ 76.76.21.21`, `A www 76.76.21.21` or equivalent) before it resolves publicly.
+- **Production Convex deployment:** `pleasant-butterfly-789` at `https://pleasant-butterfly-789.convex.cloud`. Vercel production must use this as `NEXT_PUBLIC_CONVEX_URL`. Local `.env.local` may point at a personal dev deployment — do not overwrite the prod value in the Vercel dashboard with a dev URL.
+- **Google key:** `GOOGLE_AI_API_KEY` is set once on the Convex side (`npx convex env set`); the same key is used for both prod and dev deployments during the hackathon. Never paste the key into this file, into source, or into commit messages.
 
 ## Y2K aesthetic rules
 
