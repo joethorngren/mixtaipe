@@ -111,6 +111,46 @@ test.describe("Trending chips", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Punch the monkey — Y2K fake-ad banner. Clicking it flips the body cursor
+// to a boxing glove (via body[data-punching="1"] CSS rule in globals.css).
+// ---------------------------------------------------------------------------
+
+test.describe("Punch the monkey", () => {
+  test("clicking the banner applies the boxing-glove cursor to <body> and clears it", async ({ page }) => {
+    await page.goto("/");
+    const banner = page.getByTestId("punch-the-monkey");
+    await expect(banner).toBeVisible();
+
+    // Baseline: body should NOT be in punching state.
+    await expect(page.locator('body[data-punching="1"]')).toHaveCount(0);
+
+    await banner.click();
+
+    // Immediately after click the body should be marked, and the glove
+    // cursor rule in globals.css targets that attribute.
+    await expect(page.locator('body[data-punching="1"]')).toHaveCount(1);
+    const cursor = await page.evaluate(() => getComputedStyle(document.body).cursor);
+    // Computed cursor includes the SVG url() + hotspot, prefixed with the
+    // fallback pointer keyword. We only need to assert we switched to the
+    // glove, so match the inline-svg data URI signature.
+    expect(cursor).toMatch(/data:image\/svg\+xml/);
+
+    // After the 1.5s punch window the attribute should clear itself.
+    await expect(page.locator('body[data-punching="1"]')).toHaveCount(0, {
+      timeout: 3_500,
+    });
+  });
+
+  test("banner click does NOT navigate away (href is a joke)", async ({ page }) => {
+    await page.goto("/");
+    const before = page.url();
+    await page.getByTestId("punch-the-monkey").click();
+    // preventDefault should keep us on the same URL (no hash jump).
+    expect(page.url()).toBe(before);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Sidebar nav — only Library / Hot List / Search are kept. Others were
 // removed because they pointed at duplicate or nonexistent anchors. These
 // tests lock in both the positive (what should be there) and the negative
