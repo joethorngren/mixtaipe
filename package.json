@@ -11,7 +11,8 @@
     "convex:push": "convex dev --once",
     "convex:typecheck": "tsc -p convex/tsconfig.json",
     "seed:topics": "convex run seeds:importTopics \"$(cat scripts/placeholder-topics.json)\"",
-    "smoke:topic": "convex run seeds:seedFromTopic '{\"topic\":\"tamagotchi funeral march\"}'"
+    "smoke:topic": "convex run seeds:seedFromTopic '{\"topic\":\"tamagotchi funeral march\"}'",
+    "smoke:register": "convex run externalAgents:register '{\"name\":\"SmokeBot\",\"description\":\"smoke test agent\",\"kind\":\"producer\"}'"
   },
   "dependencies": {
     "convex": "^1.17.4",

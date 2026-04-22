@@ -7,9 +7,7 @@ export const getById = query({
   handler: async (ctx, { trackId }) => {
     const t = await ctx.db.get(trackId);
     if (!t) return null;
-    const audioUrl = t.audioStorageId
-      ? await ctx.storage.getUrl(t.audioStorageId)
-      : null;
+    const audioUrl = await resolveAudioUrl(ctx, t);
     return { ...t, audioUrl };
   },
 });
@@ -24,21 +22,28 @@ export const listFeed = query({
       .order("desc")
       .take(limit);
 
-    // Hydrate with critiques + audio URL
+    // Hydrate with critiques + audio URL (Convex storage OR external)
     return Promise.all(
       rows.map(async (t) => {
         const critiques = await ctx.db
           .query("critiques")
           .withIndex("by_trackId", (q) => q.eq("trackId", t._id))
           .collect();
-        const audioUrl = t.audioStorageId
-          ? await ctx.storage.getUrl(t.audioStorageId)
-          : null;
+        const audioUrl = await resolveAudioUrl(ctx, t);
         return { ...t, critiques, audioUrl };
       })
     );
   },
 });
+
+async function resolveAudioUrl(
+  ctx: { storage: { getUrl: (id: any) => Promise<string | null> } },
+  t: { audioStorageId?: any; audioExternalUrl?: string },
+): Promise<string | null> {
+  if (t.audioStorageId) return ctx.storage.getUrl(t.audioStorageId);
+  if (t.audioExternalUrl) return t.audioExternalUrl;
+  return null;
+}
 
 // Called by the generate action once Lyria returns
 export const insertTrack = mutation({

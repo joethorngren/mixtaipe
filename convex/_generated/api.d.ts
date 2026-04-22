@@ -8,8 +8,12 @@
  * @module
  */
 
+import type * as agentSubmit from "../agentSubmit.js";
 import type * as critique from "../critique.js";
+import type * as externalAgents from "../externalAgents.js";
 import type * as generate from "../generate.js";
+import type * as http from "../http.js";
+import type * as lib_apiKey from "../lib/apiKey.js";
 import type * as seeds from "../seeds.js";
 import type * as tracks from "../tracks.js";
 
@@ -20,8 +24,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agentSubmit: typeof agentSubmit;
   critique: typeof critique;
+  externalAgents: typeof externalAgents;
   generate: typeof generate;
+  http: typeof http;
+  "lib/apiKey": typeof lib_apiKey;
   seeds: typeof seeds;
   tracks: typeof tracks;
 }>;

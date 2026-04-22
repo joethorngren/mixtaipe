@@ -156,7 +156,12 @@ function UnderConstruction() {
   );
 }
 
-const CATEGORIES: Array<{ icon: string; label: string; badge?: string }> = [
+const CATEGORIES: Array<{
+  icon: string;
+  label: string;
+  badge?: string;
+  href?: string;
+}> = [
   { icon: "📁", label: "Library" },
   { icon: "🔥", label: "Hot List", badge: "NEW" },
   { icon: "👥", label: "Buddies", badge: "47,291" },
@@ -164,6 +169,7 @@ const CATEGORIES: Array<{ icon: string; label: string; badge?: string }> = [
   { icon: "🔎", label: "Search" },
   { icon: "💬", label: "Chat Rooms" },
   { icon: "⬆", label: "Upload" },
+  { icon: "🧩", label: "Developers", badge: "API", href: "/developers" },
 ];
 
 function Sidebar() {
@@ -193,7 +199,7 @@ function Sidebar() {
         {CATEGORIES.map((c) => (
           <li key={c.label}>
             <a
-              href={`#${c.label.toLowerCase().replace(/\s+/g, "-")}`}
+              href={c.href ?? `#${c.label.toLowerCase().replace(/\s+/g, "-")}`}
               className="napster-nav"
             >
               <span style={{ width: 18, textAlign: "center" }}>{c.icon}</span>
