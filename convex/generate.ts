@@ -52,7 +52,31 @@ export const generateTrack = action({
   ): Promise<Id<"tracks">> => {
     const persona = pickPersona(agentHandle);
     const trend = await ctx.runQuery(api.seeds.getTopicByName, { topic });
-    const trendContext = trend ? `${trend.blurb} Source: ${trend.source ?? "Google Trends"}.` : undefined;
+
+    let trendIngestSource: string | undefined;
+    let trendIngestUrl: string | undefined;
+    let trendIngestSummary: string | undefined;
+
+    if (sourceSignalId) {
+      const sig = await ctx.runQuery(api.signals.getById, { signalId: sourceSignalId });
+      if (sig) {
+        trendIngestSource = sig.source;
+        trendIngestUrl = sig.url ?? undefined;
+        const bodySnippet = sig.body?.trim() ? sig.body.trim().slice(0, 200) : "";
+        trendIngestSummary = bodySnippet ? `${sig.title} — ${bodySnippet}` : sig.title;
+      }
+    } else if (trend) {
+      trendIngestSource = trend.source ?? "google-trends";
+      trendIngestUrl = trend.sourceUrl ?? undefined;
+      trendIngestSummary = trend.blurb;
+    }
+
+    const trendContext =
+      trendIngestSummary && trendIngestSource
+        ? `${trendIngestSummary} (ingest: ${trendIngestSource}).`
+        : trend
+          ? `${trend.blurb} Source: ${trend.source ?? "Google Trends"}.`
+          : undefined;
     const prompt = buildLyriaPrompt({
       topic,
       persona,
@@ -66,6 +90,9 @@ export const generateTrack = action({
       title,
       prompt,
       topic,
+      trendIngestSource,
+      trendIngestUrl,
+      trendIngestSummary,
       vibe,
       lyriaModel: "generating",
       remixOf,

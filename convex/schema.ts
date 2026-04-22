@@ -50,6 +50,11 @@ export default defineSchema({
     title: v.string(),
     prompt: v.string(),
     topic: v.optional(v.string()),
+    /** Raw ingest key, e.g. google-trends-us, reddit, hn — shown as human copy in the feed. */
+    trendIngestSource: v.optional(v.string()),
+    trendIngestUrl: v.optional(v.string()),
+    /** Headline / blurb from the scraper or signal title+body. */
+    trendIngestSummary: v.optional(v.string()),
     vibe: v.optional(vibe),
     audioStorageId: v.optional(v.id("_storage")),
     durationSec: v.optional(v.number()),
