@@ -214,7 +214,8 @@ export const seedFromTopic = action({
   },
 });
 
-function normalizeTopic(topic: string): string {
+/** Used by tracks.listFeed to join trending provenance to a row. */
+export function normalizeTopic(topic: string): string {
   return topic
     .trim()
     .toLowerCase()

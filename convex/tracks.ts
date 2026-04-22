@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { normalizeTopic } from "./seeds";
 
 // Mirrors convex/schema.ts :: audioFeatures + vibe so patches validate.
 const audioFeatures = v.object({
@@ -67,7 +68,55 @@ export const listFeed = query({
           ? await ctx.storage.getUrl(t.audioStorageId)
           : null;
         const score = reactions.reduce((s, r) => s + (r.vote || 0), 0);
-        return { ...t, critiques, reactions, audioUrl, score };
+
+        let sourceInspiration: {
+          source: string;
+          title: string;
+          musicSeed?: string;
+          url?: string;
+        } | null = null;
+        if (t.sourceSignalId) {
+          const sig = await ctx.db.get(t.sourceSignalId);
+          if (sig) {
+            sourceInspiration = {
+              source: sig.source,
+              title: sig.title,
+              musicSeed: sig.musicSeed,
+              url: sig.url,
+            };
+          }
+        }
+
+        let trendProvenance: {
+          source?: string;
+          sourceUrl?: string;
+          blurb: string;
+        } | null = null;
+        if (t.topic && !sourceInspiration) {
+          const row = await ctx.db
+            .query("trendingTopics")
+            .withIndex("by_topic", (q) =>
+              q.eq("topic", normalizeTopic(t.topic!)),
+            )
+            .unique();
+          if (row) {
+            trendProvenance = {
+              source: row.source,
+              sourceUrl: row.sourceUrl,
+              blurb: row.blurb,
+            };
+          }
+        }
+
+        return {
+          ...t,
+          critiques,
+          reactions,
+          audioUrl,
+          score,
+          sourceInspiration,
+          trendProvenance,
+        };
       }),
     );
   },

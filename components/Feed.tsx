@@ -14,7 +14,7 @@ import { Typewriter } from "./Typewriter";
 import { usePlayback } from "@/components/PlaybackProvider";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
-import { formatInspirationLine } from "@/lib/trendProvenance";
+import { formatInspirationLine, resolveInspirationForFeedRow } from "@/lib/trendProvenance";
 
 function relTime(createdAt: number, now: number): string {
   const diff = Math.max(0, Math.floor((now - createdAt) / 1000));
@@ -139,6 +139,7 @@ export function Feed() {
                   const lyriaTimedOut = !t.audioUrl && ageMs > 20_000;
                   const critiqueStalled = !topCritique && ageMs > 20_000;
                   const inDeck = nowPlaying?.trackId === t._id;
+                  const rowIngest = resolveInspirationForFeedRow(t);
                   return (
                     <tr
                       key={t._id}
@@ -234,9 +235,8 @@ export function Feed() {
                       <td style={td} className="td-critique">
                         <VibeBrief
                           vibe={t.vibe}
-                          trendIngestSource={t.trendIngestSource}
-                          trendIngestUrl={t.trendIngestUrl}
-                          trendIngestSummary={t.trendIngestSummary}
+                          ingest={rowIngest}
+                          unlinkedTopicSlug={!rowIngest && t.topic ? t.topic : undefined}
                         />
                         {topCritique ? (
                           <div className="critique-block">
@@ -320,16 +320,9 @@ function ReactionsBlock({
   const { playTrack, nowPlaying } = usePlayback();
   const inDeck = nowPlaying?.trackId === trackId;
 
-  // Keep first-seen timestamp per reaction so Typewriter delays stagger.
-  const seenAtRef = useRef<Map<string, number>>(new Map());
   const sorted = useMemo(() => {
     const copy = reactions.slice();
     copy.sort((a, b) => a.createdAt - b.createdAt);
-    for (const r of copy) {
-      if (!seenAtRef.current.has(r._id)) {
-        seenAtRef.current.set(r._id, Date.now());
-      }
-    }
     return copy;
   }, [reactions]);
 
@@ -365,8 +358,6 @@ function ReactionsBlock({
         const voteGlyph = r.vote > 0 ? "▲" : r.vote < 0 ? "▼" : "·";
         const voteClass =
           r.vote > 0 ? "react-up" : r.vote < 0 ? "react-down" : "react-neutral";
-        const firstSeen = seenAtRef.current.get(r._id) ?? r.createdAt;
-        const sinceSeen = Date.now() - firstSeen;
         return (
           <div key={r._id} className={`feed-reaction ${voteClass}`}>
             <span className="feed-reaction__vote">{voteGlyph}</span>
@@ -382,13 +373,7 @@ function ReactionsBlock({
                 @{r.hearsAt}
               </button>
             ) : null}
-            <span className="feed-reaction__comment">
-              <Typewriter
-                text={r.comment}
-                cps={55}
-                startDelayMs={sinceSeen < 200 ? 0 : 0}
-              />
-            </span>
+            <span className="feed-reaction__comment">{r.comment}</span>
             {r.evidence ? (
               <span className="feed-reaction__evidence" title="what this agent heard">
                 — {r.evidence}
@@ -526,24 +511,20 @@ type VibeShape = {
 
 type VibeBriefProps = {
   vibe?: VibeShape | null;
-  trendIngestSource?: string;
-  trendIngestUrl?: string;
-  trendIngestSummary?: string;
+  /** Resolved from stored ingest fields + live `listFeed` joins (signals, trendingTopics). */
+  ingest?: { source?: string; url?: string; summary?: string } | null;
+  /** When we only have a topic slug and no wire/trends row matched — explains “missing” provenance. */
+  unlinkedTopicSlug?: string;
 };
 
-function VibeBrief({
-  vibe,
-  trendIngestSource,
-  trendIngestUrl,
-  trendIngestSummary,
-}: VibeBriefProps) {
+function VibeBrief({ vibe, ingest, unlinkedTopicSlug }: VibeBriefProps) {
   const inspiration = formatInspirationLine({
-    source: trendIngestSource,
-    url: trendIngestUrl,
-    summary: trendIngestSummary,
+    source: ingest?.source,
+    url: ingest?.url,
+    summary: ingest?.summary,
   });
 
-  if (!vibe && !inspiration) return null;
+  if (!vibe && !inspiration && !unlinkedTopicSlug) return null;
 
   const tags = vibe
     ? [
@@ -561,7 +542,9 @@ function VibeBrief({
         <span className="vibe-brief__badge">PRODUCER BRIEF</span>
         <span className="vibe-brief__dot" aria-hidden>·</span>
         <span className="vibe-brief__note">
-          {inspiration ? "live web seed → sound brief (Gemini)" : "trend → vibe IR (Gemini)"}
+          {inspiration || unlinkedTopicSlug
+            ? "live web seed → sound brief (Gemini)"
+            : "trend → vibe IR (Gemini)"}
         </span>
       </div>
       {inspiration ? (
@@ -585,6 +568,16 @@ function VibeBrief({
               <span>{inspiration.line}</span>
             </>
           )}
+        </div>
+      ) : unlinkedTopicSlug ? (
+        <div className="vibe-brief__inspiration vibe-brief__inspiration--weak">
+          <span className="vibe-brief__label">inspiration</span>
+          {": "}
+          <span>
+            No live ingest row linked — only the seed slug “
+            {unlinkedTopicSlug.replace(/_/g, " ")}” (freehand prompt, remix carry-over, or trend chip
+            no longer in the DB after a refresh).
+          </span>
         </div>
       ) : null}
       {!vibe ? (
