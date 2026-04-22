@@ -57,6 +57,29 @@ export const insertTrack = mutation({
   },
 });
 
+/** Patch audio + metadata after insert — used so the feed can show a row before Lyria returns. */
+export const updateTrack = mutation({
+  args: {
+    trackId: v.id("tracks"),
+    audioStorageId: v.optional(v.id("_storage")),
+    durationSec: v.optional(v.number()),
+    lyriaModel: v.optional(v.string()),
+  },
+  handler: async (ctx, { trackId, audioStorageId, durationSec, lyriaModel }) => {
+    const patch: {
+      audioStorageId?: typeof audioStorageId;
+      durationSec?: number;
+      lyriaModel?: string;
+    } = {};
+    if (audioStorageId !== undefined) patch.audioStorageId = audioStorageId;
+    if (durationSec !== undefined) patch.durationSec = durationSec;
+    if (lyriaModel !== undefined) patch.lyriaModel = lyriaModel;
+    if (Object.keys(patch).length > 0) {
+      await ctx.db.patch(trackId, patch);
+    }
+  },
+});
+
 export const insertCritique = mutation({
   args: {
     trackId: v.id("tracks"),

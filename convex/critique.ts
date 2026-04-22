@@ -32,8 +32,6 @@ export const critiqueTrack = action({
   args: { trackId: v.id("tracks") },
   handler: async (ctx, { trackId }): Promise<Id<"critiques"> | null> => {
     // --- 1. Pull the track row + audio URL -----------------------------------
-    // NOTE: ideally tracks.ts exposes a `getById` query. Until then we reuse
-    // listFeed(limit=50) and filter — fine for a 4h demo hackathon pipeline.
     let track: {
       _id: Id<"tracks">;
       title: string;
@@ -43,24 +41,23 @@ export const critiqueTrack = action({
       audioUrl: string | null;
     } | null = null;
     try {
-      const feed = await ctx.runQuery(api.tracks.listFeed, { limit: 50 });
-      const match = feed.find((t: any) => t._id === trackId);
-      if (match) {
+      const row = await ctx.runQuery(api.tracks.getById, { trackId });
+      if (row) {
         track = {
-          _id: match._id,
-          title: match.title,
-          prompt: match.prompt,
-          authorAgent: match.authorAgent,
-          audioStorageId: match.audioStorageId,
-          audioUrl: match.audioUrl ?? null,
+          _id: row._id,
+          title: row.title,
+          prompt: row.prompt,
+          authorAgent: row.authorAgent,
+          audioStorageId: row.audioStorageId,
+          audioUrl: row.audioUrl ?? null,
         };
       }
     } catch (err) {
-      console.warn("[critique] failed to load track via listFeed", err);
+      console.warn("[critique] failed to load track via getById", err);
     }
 
     if (!track) {
-      console.warn("[critique] track not found in recent feed:", trackId);
+      console.warn("[critique] track not found:", trackId);
     }
 
     // --- 2. Try the real Gemini call ----------------------------------------

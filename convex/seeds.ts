@@ -41,13 +41,13 @@ export const seedFromTopic = action({
     agentHandle: v.optional(v.string()), // if omitted, pick random
   },
   handler: async (ctx, { topic, agentHandle }): Promise<null> => {
-    // 1) Generate a track (Joe's generate action picks a persona if not given)
     const trackId = await ctx.runAction(api.generate.generateTrack, {
       topic,
       agentHandle,
     });
-    // 2) Kick off critique (fire and forget — feed will update when it lands)
-    await ctx.runAction(api.critique.critiqueTrack, { trackId });
+    // Schedule critique on the work pool so the UI is not stuck waiting on Gemini
+    // (track row is already visible; A&R fills in when this completes).
+    await ctx.scheduler.runAfter(0, api.critique.critiqueTrack, { trackId });
     return null;
   },
 });

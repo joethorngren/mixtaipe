@@ -29,32 +29,48 @@ export const generateTrack = action({
     const prompt = buildLyriaPrompt({ topic, persona });
     const title = fakeTrackTitle({ topic, persona });
 
-    // ------------------------------------------------------------------
-    // TODO(Joe): call Lyria for real. Target endpoint (one of):
-    //   - Google AI Studio: https://generativelanguage.googleapis.com/v1beta/models/lyria-*:generateMusic
-    //   - Vertex AI Lyria via @google-cloud/aiplatform
-    // Whichever responds first wins. Fall back to canned loop bank if both 404.
-    // ------------------------------------------------------------------
-    const audio = await callLyria(prompt);
-
-    let audioStorageId: Id<"_storage"> | undefined;
-    let durationSec: number | undefined;
-    if (audio) {
-      const blob = new Blob([uint8ArrayToArrayBuffer(audio.bytes)], { type: audio.mimeType });
-      audioStorageId = await ctx.storage.store(blob);
-      durationSec = audio.durationSec;
-    }
-
+    // Commit the row first so the live feed can show a ~RECORDING state while Lyria runs
+    // (E2: seed/chip should produce a visible row without waiting for audio).
     const trackId: Id<"tracks"> = await ctx.runMutation(api.tracks.insertTrack, {
       authorAgent: persona.handle,
       title,
       prompt,
       topic,
-      audioStorageId,
-      durationSec,
-      lyriaModel: audio?.model ?? "no-audio",
+      lyriaModel: "generating",
       remixOf,
     });
+
+    try {
+      // ------------------------------------------------------------------
+      // TODO(Joe): call Lyria for real. Target endpoint (one of):
+      //   - Google AI Studio: https://generativelanguage.googleapis.com/v1beta/models/lyria-*:generateMusic
+      //   - Vertex AI Lyria via @google-cloud/aiplatform
+      // Whichever responds first wins. Fall back to canned loop bank if both 404.
+      // ------------------------------------------------------------------
+      const audio = await callLyria(prompt);
+
+      if (audio) {
+        const blob = new Blob([uint8ArrayToArrayBuffer(audio.bytes)], { type: audio.mimeType });
+        const audioStorageId: Id<"_storage"> = await ctx.storage.store(blob);
+        await ctx.runMutation(api.tracks.updateTrack, {
+          trackId,
+          audioStorageId,
+          durationSec: audio.durationSec,
+          lyriaModel: audio.model,
+        });
+      } else {
+        await ctx.runMutation(api.tracks.updateTrack, {
+          trackId,
+          lyriaModel: "no-audio",
+        });
+      }
+    } catch (err) {
+      console.error("[generate] after insert", err);
+      await ctx.runMutation(api.tracks.updateTrack, {
+        trackId,
+        lyriaModel: "error",
+      });
+    }
 
     return trackId;
   },

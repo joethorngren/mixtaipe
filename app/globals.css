@@ -468,7 +468,7 @@ html {
 .critique-block {
   display: block;
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.4;
   color: #003030;
   background: #f0f0f0;
   border: 1px solid #b8b8b8;
@@ -476,6 +476,8 @@ html {
   padding: 4px 6px 5px;
   margin: 0;
   max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .critique-who {
   color: #0000a0;
@@ -494,6 +496,35 @@ html {
   opacity: 0.9;
   border-top: 1px dotted #c0c0c0;
   padding-top: 2px;
+}
+.napster-row--newest td {
+  box-shadow: inset 3px 0 0 #0b63c9;
+}
+.feed-newest-pill {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 4px;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 1.2;
+  vertical-align: middle;
+  color: #fff;
+  background: #0b63c9;
+  border: 1px solid #004080;
+  font-family: Tahoma, sans-serif;
+}
+.feed-justin {
+  color: #0b63c9;
+  font-weight: bold;
+  font-size: 10px;
+}
+.feed-rank {
+  font-variant-numeric: tabular-nums;
+}
+.feed-pending-audio {
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  color: #6a3b00;
 }
 .napster-row--fresh {
   animation: napster-fresh 2.4s ease-out;
