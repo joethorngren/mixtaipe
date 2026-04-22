@@ -1,5 +1,3 @@
-"use node";
-
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
@@ -8,14 +6,20 @@ import {
   CRITIC_PERSONA,
   CRITIC_SYSTEM_PROMPT,
   buildCritiqueUserPrompt,
+  type TrendVibe,
 } from "../lib/prompts";
+import { analyseWavBytes, estimateMp3Duration, type AudioFeatures } from "./audio";
 
 // ============================================================================
-// A&R agent — listens to a track with Gemini multimodal, writes a review.
-// Gemini 2.5 accepts audio input directly via inline_data base64.
+// A&R agent — listens to a track with Gemini multimodal, writes a verdict.
+//
+// No canned fallback. If Gemini fails entirely we write nothing and the UI
+// keeps showing "A&R listening…" until the next retry. Audio is optional
+// (Gemini can still critique off title+prompt+vibe+features) but we always
+// pass measured numbers so the review stays grounded.
 // ============================================================================
 
-const GEMINI_MODEL = "gemini-2.5-flash"; // flash for speed; swap to gemini-2.5-pro if we want depth
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 type CritiqueResult = {
   verdict: string;
@@ -31,45 +35,61 @@ type CritiqueResult = {
 export const critiqueTrack = action({
   args: { trackId: v.id("tracks") },
   handler: async (ctx, { trackId }): Promise<Id<"critiques"> | null> => {
-    // --- 1. Pull the track row + audio URL -----------------------------------
-    let track: {
-      _id: Id<"tracks">;
-      title: string;
-      prompt: string;
-      authorAgent: string;
-      audioStorageId?: Id<"_storage">;
-      audioUrl: string | null;
-    } | null = null;
-    try {
-      const row = await ctx.runQuery(api.tracks.getById, { trackId });
-      if (row) {
-        track = {
-          _id: row._id,
-          title: row.title,
-          prompt: row.prompt,
-          authorAgent: row.authorAgent,
-          audioStorageId: row.audioStorageId,
-          audioUrl: row.audioUrl ?? null,
-        };
+    const row = await ctx.runQuery(api.tracks.getById, { trackId });
+    if (!row) return null;
+
+    // Fetch audio bytes (also gives us a shot at analysis if missing).
+    let audioBase64: string | null = null;
+    let audioMime = "audio/mpeg";
+    let features: AudioFeatures | null = row.audioFeatures ?? null;
+    if (row.audioUrl) {
+      try {
+        const res = await fetch(row.audioUrl);
+        if (res.ok) {
+          const buf = new Uint8Array(await res.arrayBuffer());
+          audioMime =
+            res.headers.get("content-type")?.split(";")[0]?.trim() || "audio/mpeg";
+          audioBase64 = u8ToBase64(buf);
+          if (!features) {
+            features =
+              analyseWavBytes(buf) ?? {
+                durationSec: estimateMp3Duration(buf.byteLength),
+                bpm: 0,
+                peakDbfs: 0,
+                rmsDbfs: 0,
+                lowEnergy: 0,
+                midEnergy: 0,
+                highEnergy: 0,
+                dynamicRange: 0,
+                sampleRate: 0,
+                channels: 0,
+              };
+            await ctx.runMutation(api.tracks.patchFeatures, {
+              trackId,
+              audioFeatures: features,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[critique] audio fetch failed:", err);
       }
-    } catch (err) {
-      console.warn("[critique] failed to load track via getById", err);
     }
 
-    if (!track) {
-      console.warn("[critique] track not found:", trackId);
+    const critique = await callGemini({
+      audioBase64,
+      audioMime,
+      title: row.title,
+      prompt: row.prompt,
+      authorHandle: row.authorAgent,
+      vibe: (row.vibe as TrendVibe | undefined) ?? null,
+      features,
+    });
+
+    if (!critique) {
+      // No fake verdict. Pipeline retries on next pass.
+      return null;
     }
 
-    // --- 2. Try the real Gemini call ----------------------------------------
-    const critique =
-      (await callGemini({
-        audioUrl: track?.audioUrl ?? null,
-        title: track?.title ?? "unknown.mp3",
-        prompt: track?.prompt ?? "(unknown prompt)",
-        authorHandle: track?.authorAgent ?? "anon",
-      })) ?? fallbackCritique(track?.title ?? "unknown.mp3");
-
-    // --- 3. Persist ---------------------------------------------------------
     const critiqueId: Id<"critiques"> = await ctx.runMutation(
       api.tracks.insertCritique,
       {
@@ -79,59 +99,59 @@ export const critiqueTrack = action({
         scores: critique.scores,
       },
     );
+
+    await ctx.runMutation(api.roomLog.insert, {
+      kind: "critique",
+      agentHandle: CRITIC_PERSONA.handle,
+      trackId,
+      text: `<${CRITIC_PERSONA.handle}> ${critique.verdict.slice(0, 200)} [${critique.scores.overall}/10]`,
+    });
     return critiqueId;
   },
 });
 
-// ---------------------------------------------------------------------------
-// Gemini call
-// ---------------------------------------------------------------------------
-
 async function callGemini(args: {
-  audioUrl: string | null;
+  audioBase64: string | null;
+  audioMime: string;
   title: string;
   prompt: string;
   authorHandle: string;
+  vibe: TrendVibe | null;
+  features: AudioFeatures | null;
 }): Promise<CritiqueResult | null> {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) {
-    console.warn("[critique] GOOGLE_AI_API_KEY missing — using fallback");
-    return null;
-  }
-
-  // Audio part is optional — if storage URL is missing we still let Gemini
-  // judge off the prompt + title so the pipeline doesn't die.
-  let audioPart: { inline_data: { mime_type: string; data: string } } | null =
-    null;
-  if (args.audioUrl) {
-    try {
-      const audioRes = await fetch(args.audioUrl);
-      if (!audioRes.ok) {
-        throw new Error(`audio fetch ${audioRes.status}`);
-      }
-      const buf = Buffer.from(await audioRes.arrayBuffer());
-      const mime =
-        audioRes.headers.get("content-type")?.split(";")[0]?.trim() ||
-        "audio/mpeg";
-      audioPart = {
-        inline_data: {
-          mime_type: mime.startsWith("audio/") ? mime : "audio/mpeg",
-          data: buf.toString("base64"),
-        },
-      };
-    } catch (err) {
-      console.warn("[critique] could not fetch audio bytes:", err);
-    }
-  }
+  if (!apiKey) return null;
 
   const userText = buildCritiqueUserPrompt({
     title: args.title,
     prompt: args.prompt,
     authorHandle: args.authorHandle,
+    vibe: args.vibe,
+    features: args.features
+      ? {
+          durationSec: args.features.durationSec,
+          bpm: args.features.bpm,
+          peakDbfs: args.features.peakDbfs,
+          rmsDbfs: args.features.rmsDbfs,
+          lowEnergy: args.features.lowEnergy,
+          midEnergy: args.features.midEnergy,
+          highEnergy: args.features.highEnergy,
+          dynamicRange: args.features.dynamicRange,
+        }
+      : null,
   });
 
-  const parts: any[] = [{ text: userText }];
-  if (audioPart) parts.push(audioPart);
+  const parts: Array<Record<string, unknown>> = [{ text: userText }];
+  if (args.audioBase64) {
+    parts.push({
+      inline_data: {
+        mime_type: args.audioMime.startsWith("audio/")
+          ? args.audioMime
+          : "audio/mpeg",
+        data: args.audioBase64,
+      },
+    });
+  }
 
   const body = {
     systemInstruction: { parts: [{ text: CRITIC_SYSTEM_PROMPT }] },
@@ -151,34 +171,23 @@ async function callGemini(args: {
         body: JSON.stringify(body),
       },
     );
-
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
       console.warn(
-        `[critique] Gemini HTTP ${res.status}: ${errText.slice(0, 400)}`,
+        `[critique] Gemini HTTP ${res.status}: ${(await res.text()).slice(0, 400)}`,
       );
       return null;
     }
-
-    const json: any = await res.json();
-    const text: string | undefined =
-      json?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      console.warn("[critique] Gemini returned no text part", JSON.stringify(json).slice(0, 400));
-      return null;
-    }
-
-    const parsed = JSON.parse(text);
-    return coerceCritique(parsed);
+    const json = (await res.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return null;
+    return coerceCritique(JSON.parse(text));
   } catch (err) {
     console.warn("[critique] Gemini call/parse failed:", err);
     return null;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function clampScore(n: unknown): number {
   const x = typeof n === "number" ? n : Number(n);
@@ -186,13 +195,14 @@ function clampScore(n: unknown): number {
   return Math.max(0, Math.min(10, Math.round(x)));
 }
 
-function coerceCritique(raw: any): CritiqueResult | null {
+function coerceCritique(raw: unknown): CritiqueResult | null {
   if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
   const verdict =
-    typeof raw.verdict === "string" && raw.verdict.trim().length > 0
-      ? raw.verdict.trim()
+    typeof r.verdict === "string" && r.verdict.trim().length > 0
+      ? r.verdict.trim()
       : null;
-  const s = raw.scores ?? {};
+  const s = (r.scores ?? {}) as Record<string, unknown>;
   if (!verdict) return null;
   return {
     verdict,
@@ -206,28 +216,13 @@ function coerceCritique(raw: any): CritiqueResult | null {
   };
 }
 
-function fallbackCritique(title: string): CritiqueResult {
-  // randomized-ish so reviews don't all look identical when Gemini is down
-  const rand = (lo: number, hi: number) =>
-    lo + Math.floor(Math.random() * (hi - lo + 1));
-  const verdicts = [
-    `brb winamp just crashed listening to "${title}". 56k warmth is there but the crunch is kinda mid tbh. print it anyway ~_~`,
-    `lol this feels like a kazaa mislabel — expected aphex, got something weirder. napster-core energy, i rock with it fr.`,
-    `ok ok ok. burned this straight to cd-r in my head. mixtape cohesion is solid, dialup hiss could be louder imo. 9/10 limewire certified :p`,
-    `tbh the first 4 bars slap but then it kinda drifts like a soulseek queue at 2am. still — audiogalaxy would've hosted this.`,
-    `this track is doing the dial-up handshake in my SOUL. pixelcrunch a lil weak but overall vibes are very cd-r shoebox. ^_^`,
-  ];
-  return {
-    verdict: verdicts[Math.floor(Math.random() * verdicts.length)],
-    scores: {
-      pixelCrunch: rand(5, 9),
-      dialupWarmth: rand(5, 9),
-      burnedCdAuthenticity: rand(5, 9),
-      mixtapeCohesion: rand(5, 9),
-      overall: rand(6, 9),
-    },
-  };
+// V8 base64 helper (no Buffer in the default Convex runtime).
+function u8ToBase64(u8: Uint8Array): string {
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < u8.length; i += chunk) {
+    const slice = u8.subarray(i, Math.min(u8.length, i + chunk));
+    bin += String.fromCharCode.apply(null, Array.from(slice));
+  }
+  return btoa(bin);
 }
-
-// Re-exports for convenience / debugging
-export { CRITIC_SYSTEM_PROMPT, buildCritiqueUserPrompt };

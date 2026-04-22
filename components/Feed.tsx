@@ -1,18 +1,19 @@
 "use client";
 
 // ============================================================================
-// Social feed: trends → agent producers post clips → A&R agents judge, live.
-// Live rows always render first. Sample/illustration rows only appear when the
-// real feed is empty (cold start) so judges always see real data on /live.
+// Social feed: trends → agent producers post clips → A&R verdict → peanut
+// gallery of personas reacts live with grounded comments (real audio, real
+// evidence). Nothing is canned; reactions stream in via Convex subscription.
 // ============================================================================
 
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { CdrArtwork } from "./CdrArtwork";
 import { FeedSampleRows } from "./FeedSampleRows";
 import { SocialExplainer } from "./SocialExplainer";
+import { Typewriter } from "./Typewriter";
 import { usePlayback } from "@/components/PlaybackProvider";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
 
 function relTime(createdAt: number, now: number): string {
@@ -77,9 +78,9 @@ export function Feed() {
         <div className="win98" style={{ padding: 12, fontSize: 12, lineHeight: 1.45 }}>
           <p style={{ margin: 0, fontWeight: "bold" }}>Your live feed is empty</p>
           <p style={{ margin: "8px 0 0" }}>
-            As soon as someone (you) <b>seeds a topic</b> or <b>clicks a trend</b>, a
-            producer agent will <b>add a new row here</b> and the A&amp;R will fill the
-            critique. Leave this open—the list updates on its own.
+            As soon as someone seeds a topic or the heartbeat picks a wire signal, a
+            producer agent will <b>add a new row here</b> and the peanut gallery will
+            show up. Leave this open — the list updates on its own.
           </p>
         </div>
       )}
@@ -110,13 +111,13 @@ export function Feed() {
               color: "#151515",
             }}
           >
-            <b>Newest</b> rows are at the top (#01). <b>Tracks</b> and <b>critiques</b> fill in
-            live as the pipeline runs—no refresh.
+            <b>Newest</b> rows at the top. Peanut gallery comments type themselves in as
+            agents finish listening — click a timestamp chip to jump the deck there.
           </p>
           <div style={{ overflowX: "auto" }}>
             <table
               className="napster-table"
-              style={{ width: "100%", minWidth: 480, borderCollapse: "collapse", fontSize: 13 }}
+              style={{ width: "100%", minWidth: 520, borderCollapse: "collapse", fontSize: 13 }}
             >
               <thead>
                 <tr>
@@ -124,7 +125,7 @@ export function Feed() {
                   <th style={{ width: 36 }}>#</th>
                   <th>artist</th>
                   <th>file</th>
-                  <th>A&amp;R (IRC)</th>
+                  <th>A&amp;R + peanut gallery</th>
                   <th>score</th>
                 </tr>
               </thead>
@@ -136,7 +137,7 @@ export function Feed() {
                   const isNewest = i === 0;
                   const isJustIn = ageMs < 120_000;
                   const lyriaTimedOut = !t.audioUrl && ageMs > 20_000;
-                  const critiqueStalled = !topCritique && ageMs > 15_000;
+                  const critiqueStalled = !topCritique && ageMs > 20_000;
                   const inDeck = nowPlaying?.trackId === t._id;
                   return (
                     <tr
@@ -211,6 +212,15 @@ export function Feed() {
                           {t.title}
                           {t.topic ? <span className="td-topic"> · {t.topic}</span> : null}
                         </div>
+                        {t.audioFeatures ? (
+                          <div style={{ fontSize: 10, color: "#404040", marginTop: 2 }}>
+                            {t.audioFeatures.bpm > 0 ? `~${t.audioFeatures.bpm}bpm · ` : ""}
+                            {t.audioFeatures.durationSec.toFixed(1)}s · low{" "}
+                            {Math.round(t.audioFeatures.lowEnergy * 100)}% / mid{" "}
+                            {Math.round(t.audioFeatures.midEnergy * 100)}% / high{" "}
+                            {Math.round(t.audioFeatures.highEnergy * 100)}%
+                          </div>
+                        ) : null}
                         {!t.audioUrl && lyriaTimedOut ? (
                           <div style={{ fontSize: 10, color: "#a00000", marginTop: 4 }}>
                             lyria timeout
@@ -222,12 +232,13 @@ export function Feed() {
                         ) : null}
                       </td>
                       <td style={td} className="td-critique">
+                        {t.vibe ? <VibeBrief vibe={t.vibe} /> : null}
                         {topCritique ? (
                           <div className="critique-block">
                             <span className="critique-who">
                               &lt;{topCritique.criticAgent}&gt; —{" "}
                             </span>
-                            {topCritique.verdict}
+                            <Typewriter text={topCritique.verdict} cps={60} />
                             <div className="critique-scores" aria-label="Rubric subscores">
                               p{topCritique.scores.pixelCrunch} d{topCritique.scores.dialupWarmth}{" "}
                               c{topCritique.scores.burnedCdAuthenticity} m
@@ -239,9 +250,25 @@ export function Feed() {
                         ) : (
                           <span className="td-muted">A&amp;R queued (listening when audio lands)…</span>
                         )}
+
+                        <ReactionsBlock
+                          trackId={t._id}
+                          reactions={t.reactions}
+                          hasAudio={!!t.audioUrl}
+                          audioUrl={t.audioUrl}
+                          title={t.title}
+                          author={t.authorAgent}
+                        />
                       </td>
                       <td style={{ ...td, textAlign: "center" }} className="td-score">
-                        {topCritique ? `${topCritique.scores.overall}/10` : "—"}
+                        <div>{topCritique ? `${topCritique.scores.overall}/10` : "—"}</div>
+                        {t.reactions.length > 0 ? (
+                          <div style={{ fontSize: 10, marginTop: 2, color: "#404040" }}>
+                            agents {t.score > 0 ? "+" : ""}
+                            {t.score}
+                          </div>
+                        ) : null}
+                        <HumanVoteButtons trackId={t._id} />
                       </td>
                     </tr>
                   );
@@ -270,3 +297,282 @@ export function Feed() {
 }
 
 const td: CSSProperties = { padding: "6px 8px", verticalAlign: "top" };
+
+// ---------- Reactions block ------------------------------------------------
+
+type ReactionRow = {
+  _id: Id<"reactions">;
+  agentHandle: string;
+  vote: number;
+  hearsAt?: string;
+  evidence?: string;
+  comment: string;
+  source: "agent" | "human";
+  createdAt: number;
+};
+
+function ReactionsBlock({
+  trackId,
+  reactions,
+  hasAudio,
+  audioUrl,
+  title,
+  author,
+}: {
+  trackId: Id<"tracks">;
+  reactions: ReactionRow[];
+  hasAudio: boolean;
+  audioUrl: string | null;
+  title: string;
+  author: string;
+}) {
+  const { playTrack, nowPlaying } = usePlayback();
+  const inDeck = nowPlaying?.trackId === trackId;
+
+  // Keep first-seen timestamp per reaction so Typewriter delays stagger.
+  const seenAtRef = useRef<Map<string, number>>(new Map());
+  const sorted = useMemo(() => {
+    const copy = reactions.slice();
+    copy.sort((a, b) => a.createdAt - b.createdAt);
+    for (const r of copy) {
+      if (!seenAtRef.current.has(r._id)) {
+        seenAtRef.current.set(r._id, Date.now());
+      }
+    }
+    return copy;
+  }, [reactions]);
+
+  if (sorted.length === 0) {
+    return (
+      <div className="feed-reactions feed-reactions--empty">
+        <span className="td-muted" style={{ fontStyle: "italic" }}>
+          peanut gallery listening…
+        </span>
+      </div>
+    );
+  }
+
+  function jumpToMoment(hearsAt?: string) {
+    if (!hearsAt || !audioUrl) return;
+    const seconds = parseHearsAt(hearsAt);
+    if (!inDeck) {
+      playTrack({ trackId, audioUrl, title, author });
+    }
+    if (Number.isFinite(seconds)) {
+      // Let the deck mount / load the track, then seek. The Beanamp
+      // audio element lives under the same provider.
+      setTimeout(() => {
+        const el = document.querySelector<HTMLAudioElement>(".beanamp audio");
+        if (el && !isNaN(seconds)) el.currentTime = seconds;
+      }, 250);
+    }
+  }
+
+  return (
+    <div className="feed-reactions">
+      {sorted.map((r) => {
+        const voteGlyph = r.vote > 0 ? "▲" : r.vote < 0 ? "▼" : "·";
+        const voteClass =
+          r.vote > 0 ? "react-up" : r.vote < 0 ? "react-down" : "react-neutral";
+        const firstSeen = seenAtRef.current.get(r._id) ?? r.createdAt;
+        const sinceSeen = Date.now() - firstSeen;
+        return (
+          <div key={r._id} className={`feed-reaction ${voteClass}`}>
+            <span className="feed-reaction__vote">{voteGlyph}</span>
+            <span className="feed-reaction__handle">&lt;{r.agentHandle}&gt;</span>
+            {r.hearsAt ? (
+              <button
+                type="button"
+                className="feed-reaction__hears"
+                onClick={() => jumpToMoment(r.hearsAt)}
+                disabled={!hasAudio}
+                title={`jump deck to ${r.hearsAt}`}
+              >
+                @{r.hearsAt}
+              </button>
+            ) : null}
+            <span className="feed-reaction__comment">
+              <Typewriter
+                text={r.comment}
+                cps={55}
+                startDelayMs={sinceSeen < 200 ? 0 : 0}
+              />
+            </span>
+            {r.evidence ? (
+              <span className="feed-reaction__evidence" title="what this agent heard">
+                — {r.evidence}
+              </span>
+            ) : null}
+          </div>
+        );
+      })}
+      <style jsx>{`
+        :global(.feed-reactions) {
+          margin-top: 8px;
+          display: grid;
+          gap: 3px;
+          font-family: "Courier New", monospace;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        :global(.feed-reaction) {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px 6px;
+          align-items: baseline;
+          padding: 2px 4px;
+          border-left: 2px solid transparent;
+        }
+        :global(.feed-reaction.react-up) {
+          border-left-color: #22a044;
+          background: rgba(32, 160, 70, 0.06);
+        }
+        :global(.feed-reaction.react-down) {
+          border-left-color: #c03030;
+          background: rgba(192, 48, 48, 0.06);
+        }
+        :global(.feed-reaction.react-neutral) {
+          border-left-color: #808080;
+        }
+        :global(.feed-reaction__vote) {
+          font-weight: bold;
+          width: 10px;
+          text-align: center;
+        }
+        :global(.feed-reaction__handle) {
+          color: #000080;
+          font-weight: bold;
+        }
+        :global(.feed-reaction__hears) {
+          background: #fff79a;
+          border: 1px solid #a0a000;
+          padding: 0 5px;
+          font-family: inherit;
+          font-size: 11px;
+          cursor: pointer;
+          color: #000080;
+        }
+        :global(.feed-reaction__hears:disabled) {
+          cursor: default;
+          opacity: 0.55;
+        }
+        :global(.feed-reaction__hears:hover:not(:disabled)) {
+          background: #ffee44;
+        }
+        :global(.feed-reaction__comment) {
+          color: #101010;
+        }
+        :global(.feed-reaction__evidence) {
+          color: #505050;
+          font-style: italic;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function parseHearsAt(s: string): number {
+  // "M:SS" or "M:SS-M:SS" — use start.
+  const start = s.split(/[–-]/)[0].trim();
+  const m = start.match(/^(\d+):(\d{1,2})$/);
+  if (!m) return NaN;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+// ---------- Human vote buttons --------------------------------------------
+
+function HumanVoteButtons({ trackId }: { trackId: Id<"tracks"> }) {
+  const vote = useMutation(api.reactions.humanVote);
+  const [busy, setBusy] = useState<null | "up" | "down">(null);
+  async function send(v: 1 | -1) {
+    if (busy) return;
+    setBusy(v === 1 ? "up" : "down");
+    try {
+      await vote({ trackId, vote: v });
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <div
+      style={{ display: "flex", gap: 3, marginTop: 4, justifyContent: "center" }}
+    >
+      <button
+        className="btn98"
+        style={{ padding: "0 6px", fontSize: 10 }}
+        disabled={busy !== null}
+        onClick={() => send(1)}
+        title="you: burn to CD"
+      >
+        {busy === "up" ? "…" : "▲"}
+      </button>
+      <button
+        className="btn98"
+        style={{ padding: "0 6px", fontSize: 10 }}
+        disabled={busy !== null}
+        onClick={() => send(-1)}
+        title="you: next file please"
+      >
+        {busy === "down" ? "…" : "▼"}
+      </button>
+    </div>
+  );
+}
+
+// ---------- Vibe brief -----------------------------------------------------
+
+type VibeBriefProps = {
+  vibe: {
+    category: string;
+    sentiment: string;
+    energy: number;
+    density: number;
+    era: string;
+    palette: string[];
+    hooks: string[];
+    avoid: string[];
+    reasoning: string;
+  };
+};
+
+function VibeBrief({ vibe }: VibeBriefProps) {
+  const tags = [
+    vibe.category,
+    vibe.sentiment,
+    `energy ${vibe.energy}/10`,
+    `density ${vibe.density}/10`,
+    vibe.era,
+  ].filter(Boolean);
+
+  return (
+    <div className="vibe-brief" aria-label="Producer's brief">
+      <div className="vibe-brief__head">
+        <span className="vibe-brief__badge">PRODUCER BRIEF</span>
+        <span className="vibe-brief__dot" aria-hidden>·</span>
+        <span className="vibe-brief__note">trend → vibe IR (Gemini)</span>
+      </div>
+      <div className="vibe-brief__tags">
+        {tags.map((tag, i) => (
+          <span key={i} className="vibe-brief__tag">
+            {tag}
+          </span>
+        ))}
+      </div>
+      {vibe.hooks.length > 0 && (
+        <div className="vibe-brief__row">
+          <span className="vibe-brief__label">hooks:</span>{" "}
+          {vibe.hooks.slice(0, 2).join(" · ")}
+        </div>
+      )}
+      {vibe.palette.length > 0 && (
+        <div className="vibe-brief__row">
+          <span className="vibe-brief__label">palette:</span>{" "}
+          {vibe.palette.slice(0, 4).join(", ")}
+        </div>
+      )}
+      {vibe.reasoning && (
+        <div className="vibe-brief__reasoning">&gt; {vibe.reasoning}</div>
+      )}
+    </div>
+  );
+}

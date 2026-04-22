@@ -479,6 +479,90 @@ html {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+/* =========================================================================
+   Producer's brief — the "thinking" that led to the track. Lives in the A&R
+   column *above* the critique so judges see the trend→vibe IR that Gemini
+   produced before Lyria ran. Styled like a yellow manila directive so it
+   reads as "the prompt the agent got", not "the review".
+   ========================================================================= */
+.vibe-brief {
+  display: block;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #2a2400;
+  background: #fff6c8;
+  border: 1px solid #caa400;
+  border-left: 3px solid #a88200;
+  padding: 4px 6px 5px;
+  margin: 0 0 5px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-family: "Tahoma", "MS Sans Serif", sans-serif;
+}
+.vibe-brief__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.vibe-brief__badge {
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #fff6c8;
+  background: #6b5300;
+  padding: 1px 5px;
+  border: 1px solid #3a2e00;
+}
+.vibe-brief__dot {
+  color: #6b5300;
+  font-weight: bold;
+}
+.vibe-brief__note {
+  font-size: 9px;
+  font-style: italic;
+  color: #6b5300;
+}
+.vibe-brief__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+.vibe-brief__tag {
+  display: inline-block;
+  padding: 0 4px;
+  font-size: 9px;
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  color: #3a2e00;
+  background: #ffe680;
+  border: 1px solid #a88200;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+.vibe-brief__row {
+  font-size: 10px;
+  margin-top: 2px;
+}
+.vibe-brief__label {
+  font-weight: bold;
+  color: #6b5300;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+.vibe-brief__reasoning {
+  margin-top: 3px;
+  padding: 2px 0 0;
+  border-top: 1px dotted #caa400;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-style: italic;
+  color: #4a3a00;
+}
 .critique-who {
   color: #0000a0;
   font-style: italic;

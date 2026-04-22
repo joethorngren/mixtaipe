@@ -4,7 +4,26 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { pickPersona, buildLyriaPrompt, fakeTrackTitle } from "../lib/prompts";
+import {
+  pickPersona,
+  buildLyriaPrompt,
+  fakeTrackTitle,
+  type TrendVibe,
+} from "../lib/prompts";
+import { analyseWavBytes, estimateMp3Duration } from "./audio";
+
+// Kept in sync with schema.ts :: vibeValidator. Stringly-typed on purpose.
+const vibeArg = v.object({
+  category: v.string(),
+  sentiment: v.string(),
+  energy: v.number(),
+  density: v.number(),
+  era: v.string(),
+  palette: v.array(v.string()),
+  hooks: v.array(v.string()),
+  avoid: v.array(v.string()),
+  reasoning: v.string(),
+});
 
 type GeneratedAudio = {
   bytes: Uint8Array;
@@ -23,45 +42,130 @@ export const generateTrack = action({
     topic: v.string(),
     agentHandle: v.optional(v.string()),
     remixOf: v.optional(v.id("tracks")),
+    vibe: v.optional(vibeArg),
+    sourceSignalId: v.optional(v.id("signals")),
+    sentiment: v.optional(v.number()),
   },
-  handler: async (ctx, { topic, agentHandle, remixOf }): Promise<Id<"tracks">> => {
+  handler: async (
+    ctx,
+    { topic, agentHandle, remixOf, vibe, sourceSignalId, sentiment },
+  ): Promise<Id<"tracks">> => {
     const persona = pickPersona(agentHandle);
-    const prompt = buildLyriaPrompt({ topic, persona });
+    const prompt = buildLyriaPrompt({
+      topic,
+      persona,
+      vibe: (vibe ?? null) as TrendVibe | null,
+    });
     const title = fakeTrackTitle({ topic, persona });
 
-    // Commit the row first so the live feed can show a ~RECORDING state while Lyria runs
-    // (E2: seed/chip should produce a visible row without waiting for audio).
     const trackId: Id<"tracks"> = await ctx.runMutation(api.tracks.insertTrack, {
       authorAgent: persona.handle,
       title,
       prompt,
       topic,
+      vibe,
       lyriaModel: "generating",
       remixOf,
+      sourceSignalId,
+      sentiment,
+    });
+
+    // IRC-log + burning-queue entries so the UI shows "recording" the instant
+    // the row lands — long before Lyria returns.
+    await ctx.runMutation(api.roomLog.insert, {
+      kind: "recording",
+      agentHandle: persona.handle,
+      trackId,
+      text: `* ${persona.handle} starts recording — "${topic}"`,
+    });
+    await ctx.runMutation(api.upcomingEvents.schedule, {
+      kind: "record",
+      agentHandle: persona.handle,
+      trackId,
+      label: `${persona.handle} recording "${topic.slice(0, 40)}"`,
+      scheduledFor: Date.now() + 15_000,
+    });
+    await ctx.runMutation(api.agents.touchActivity, {
+      agentHandle: persona.handle,
+      kind: "post",
     });
 
     try {
-      // ------------------------------------------------------------------
-      // TODO(Joe): call Lyria for real. Target endpoint (one of):
-      //   - Google AI Studio: https://generativelanguage.googleapis.com/v1beta/models/lyria-*:generateMusic
-      //   - Vertex AI Lyria via @google-cloud/aiplatform
-      // Whichever responds first wins. Fall back to canned loop bank if both 404.
-      // ------------------------------------------------------------------
       const audio = await callLyria(prompt);
 
       if (audio) {
-        const blob = new Blob([uint8ArrayToArrayBuffer(audio.bytes)], { type: audio.mimeType });
+        const blob = new Blob([uint8ArrayToArrayBuffer(audio.bytes)], {
+          type: audio.mimeType,
+        });
         const audioStorageId: Id<"_storage"> = await ctx.storage.store(blob);
+
+        // Compute real audio features now so reactions/critique see them.
+        const features =
+          analyseWavBytes(audio.bytes) ?? {
+            durationSec: audio.durationSec || estimateMp3Duration(audio.bytes.byteLength),
+            bpm: 0,
+            peakDbfs: 0,
+            rmsDbfs: 0,
+            lowEnergy: 0,
+            midEnergy: 0,
+            highEnergy: 0,
+            dynamicRange: 0,
+            sampleRate: 0,
+            channels: 0,
+          };
+
         await ctx.runMutation(api.tracks.updateTrack, {
           trackId,
           audioStorageId,
           durationSec: audio.durationSec,
           lyriaModel: audio.model,
         });
+        await ctx.runMutation(api.tracks.patchFeatures, {
+          trackId,
+          audioFeatures: features,
+        });
+
+        await ctx.runMutation(api.roomLog.insert, {
+          kind: "posted",
+          agentHandle: persona.handle,
+          trackId,
+          text: `<${persona.handle}> * uploaded ${title} (${Math.round(audio.durationSec)}s, bpm ~${features.bpm || "?"})`,
+        });
+
+        if (sourceSignalId) {
+          await ctx.runMutation(api.signals.markConsumed, {
+            signalId: sourceSignalId,
+            trackId,
+          });
+        }
+
+        // Fire reactions + critique + optional remix. cascadeAfterTrack
+        // checks warmMode internally; reactions/critique always run on
+        // explicit human seeds too because seedFromTopic passes through
+        // generateTrack which calls cascade unconditionally below.
+        await ctx.scheduler.runAfter(0, api.agents.cascadeAfterTrack, {
+          trackId,
+          topic,
+          authorHandle: persona.handle,
+        });
+        // Guarantee reactions + critique even when warmMode is off (human
+        // seed path). cascadeAfterTrack exits early in that case; these
+        // two are the required minimum for a live demo.
+        await ctx.scheduler.runAfter(2_500, api.critique.critiqueTrack, {
+          trackId,
+        });
+        await ctx.scheduler.runAfter(4_000, api.reactions.reactToTrack, {
+          trackId,
+        });
       } else {
         await ctx.runMutation(api.tracks.updateTrack, {
           trackId,
           lyriaModel: "no-audio",
+        });
+        await ctx.runMutation(api.roomLog.insert, {
+          kind: "smalltalk",
+          agentHandle: persona.handle,
+          text: `* ${persona.handle} bailed — no audio landed -_-`,
         });
       }
     } catch (err) {
