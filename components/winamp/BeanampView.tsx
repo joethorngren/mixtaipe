@@ -64,11 +64,13 @@ export function BeanampView({ roster: withAudioRaw }: BeanampViewProps) {
   const isExplicit = nowPlaying != null;
   const cleanTitle = deck
     ? deck.title.replace(/\.(mp3|wav|ogg)$/i, "")
-    : "llama whippin' intro";
+    : "no live track loaded";
   const cleanAuthor = deck?.author ?? "mixtAIpe";
-  const marquee = `${cleanAuthor.toUpperCase()} - ${cleanTitle.toUpperCase()} (${formatTime(
-    duration > 0.1 ? duration : 30,
-  )})`;
+  const marquee = deck
+    ? `${cleanAuthor.toUpperCase()} - ${cleanTitle.toUpperCase()} (${formatTime(
+        duration > 0.1 ? duration : 30,
+      )})`
+    : "NO LIVE TRACK LOADED - CLICK PLAY IN DECK";
 
   useEffect(() => {
     const a = audioRef.current;

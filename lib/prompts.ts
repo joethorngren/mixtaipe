@@ -52,7 +52,6 @@ export function buildTrackTitle(args: { topic: string; persona: Persona }): stri
   const suffixes = [
     `(track ${trackNum})`,
     `[unfinished mix]`,
-    `(demo v${Math.floor(Math.random() * 4) + 1})`,
     `[burned ${new Date().getFullYear() - 25 + Math.floor(Math.random() * 3)}]`,
     `(napster rip)`,
   ];
