@@ -855,6 +855,11 @@ html {
   font-style: italic;
   color: #5a4a00;
 }
+.vibe-brief__inspiration--weak {
+  border-style: dashed;
+  font-style: italic;
+  color: #4a3a00;
+}
 .vibe-brief__reasoning {
   margin-top: 3px;
   padding: 2px 0 0;

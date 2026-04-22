@@ -318,6 +318,19 @@ async function callGemini(args: {
   }
 }
 
+/** Model often opens with "omg…" — strip a layer or two so the take leads. */
+function stripLeadingInterjection(s: string): string {
+  let t = s.trim();
+  const re =
+    /^(omg|wow|dude|yo|bruh|literally|ok|so|uh|whew|sheesh|damn)\b[,!?.\s]+/i;
+  for (let i = 0; i < 4; i++) {
+    const n = t.replace(re, "").trim();
+    if (n === t) break;
+    t = n;
+  }
+  return t.length > 0 ? t : s.trim();
+}
+
 function coerceReactions(raw: unknown): ModelReaction[] | null {
   // Accept either {"reactions":[…]} or a bare array.
   const arr = Array.isArray(raw)
@@ -338,7 +351,7 @@ function coerceReactions(raw: unknown): ModelReaction[] | null {
       vote: Number(o.vote ?? 0),
       hearsAt: typeof o.hearsAt === "string" ? o.hearsAt : undefined,
       evidence: typeof o.evidence === "string" ? o.evidence : undefined,
-      comment,
+      comment: stripLeadingInterjection(comment),
     });
   }
   return out.length > 0 ? out : null;
