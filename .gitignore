@@ -17,3 +17,8 @@ tsconfig.tsbuildinfo
 # Local scratch assets (not part of the shipped UI)
 public/audio/
 public/skins/
+
+# Playwright artifacts
+/test-results/
+/playwright-report/
+/playwright/.cache/
