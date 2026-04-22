@@ -11,6 +11,16 @@
   --burned-cdr: #a8a8a8;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   background: var(--teal98);
   background-image:
@@ -18,6 +28,36 @@ body {
   background-attachment: fixed;
   color: #000;
   font-family: "Courier New", Courier, monospace;
+}
+
+.napster-page-shell {
+  width: 100%;
+}
+
+.napster-window,
+.top-marquee {
+  width: min(1040px, calc(100vw - 24px));
+}
+
+.napster-window,
+.napster-window *,
+.y2k-forum,
+.y2k-forum * {
+  min-width: 0;
+}
+
+.napster-content-grid {
+  grid-template-columns: 180px minmax(0, 1fr) !important;
+}
+
+.live-library-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px) !important;
+}
+
+.y2k-flow-strip,
+.under-construction,
+.webring {
+  overflow-wrap: anywhere;
 }
 
 /*
@@ -779,7 +819,7 @@ html {
   position: fixed;
   right: 14px;
   bottom: 14px;
-  width: 360px;
+  width: min(360px, calc(100vw - 28px));
   z-index: 120;
   font-family: "Tahoma", "MS Sans Serif", sans-serif;
   color: #fff;
@@ -1092,7 +1132,168 @@ main.moltbook-main {
   padding-bottom: 220px;
 }
 @media (max-width: 720px) {
+  .napster-page-shell {
+    padding: 8px !important;
+  }
+
+  .napster-window,
+  .top-marquee {
+    width: calc(100vw - 16px);
+  }
+
+  .napster-content-grid,
+  .live-library-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .napster-sidebar-stack {
+    order: 2;
+  }
+
+  main.moltbook-main {
+    order: 1;
+  }
+
+  .hit-counter {
+    display: none;
+  }
+
+  .under-construction,
+  .webring {
+    white-space: normal;
+  }
+
+  .beanamp {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+  }
+
   main.moltbook-main {
     padding-bottom: 260px;
+  }
+}
+
+@media (max-width: 520px) {
+  .napster-window > div:nth-child(2) {
+    padding: 10px !important;
+  }
+
+  .napster-table {
+    font-size: 11px !important;
+  }
+}
+
+/* Emergency demo readability: keep the Napster skin, stop table columns crushing. */
+.napster-table {
+  display: block;
+  width: 100% !important;
+  min-width: 0 !important;
+  border-collapse: separate !important;
+}
+
+.napster-table thead {
+  display: none;
+}
+
+.napster-table tbody {
+  display: grid;
+  gap: 10px;
+  padding: 8px;
+  background: #d4d0c8;
+}
+
+.napster-table tbody tr {
+  display: grid;
+  grid-template-columns: 78px minmax(145px, 210px) minmax(260px, 1fr) 80px;
+  grid-template-areas:
+    "when artist critique score"
+    "rank file critique score";
+  gap: 0;
+  background: #fff;
+  border: 2px inset #b8c4d8;
+}
+
+.napster-table tbody td {
+  display: block;
+  padding: 8px 10px !important;
+  border-top: 0 !important;
+  border-right: 1px solid #c7d0e0;
+  overflow-wrap: anywhere;
+}
+
+.napster-table tbody td:nth-child(1) {
+  grid-area: when;
+}
+
+.napster-table tbody td:nth-child(2) {
+  grid-area: rank;
+}
+
+.napster-table tbody td:nth-child(3) {
+  grid-area: artist;
+  border-left: 3px solid #2e5fc2;
+}
+
+.napster-table tbody td:nth-child(4) {
+  grid-area: file;
+}
+
+.napster-table tbody td:nth-child(5) {
+  grid-area: critique;
+}
+
+.napster-table tbody td:nth-child(6) {
+  grid-area: score;
+  border-right: 0;
+  background: #f7f7f7 !important;
+}
+
+.td-muted,
+.td-score {
+  white-space: normal;
+}
+
+.td-critique {
+  max-width: none;
+}
+
+.napster-filename,
+.napster-handle {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.critique-block,
+.feed-reactions {
+  max-width: 100%;
+}
+
+@media (max-width: 860px) {
+  .napster-table tbody tr {
+    grid-template-columns: 70px minmax(0, 1fr) 72px;
+    grid-template-areas:
+      "rank artist score"
+      "when file score"
+      "critique critique critique";
+  }
+}
+
+@media (max-width: 560px) {
+  .napster-table tbody {
+    padding: 6px;
+  }
+
+  .napster-table tbody tr {
+    grid-template-columns: minmax(0, 1fr) 62px;
+    grid-template-areas:
+      "artist score"
+      "file score"
+      "when rank"
+      "critique critique";
+  }
+
+  .napster-table tbody td {
+    padding: 7px 8px !important;
   }
 }

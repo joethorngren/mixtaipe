@@ -44,6 +44,7 @@ export function LiveHome() {
         </div>
         <div
           id="library"
+          className="live-library-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "minmax(0,1fr) 300px",

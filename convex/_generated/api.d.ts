@@ -22,6 +22,7 @@ import type * as settings from "../settings.js";
 import type * as signals from "../signals.js";
 import type * as smalltalk from "../smalltalk.js";
 import type * as tracks from "../tracks.js";
+import type * as trends from "../trends.js";
 import type * as upcomingEvents from "../upcomingEvents.js";
 import type * as wire from "../wire.js";
 
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   signals: typeof signals;
   smalltalk: typeof smalltalk;
   tracks: typeof tracks;
+  trends: typeof trends;
   upcomingEvents: typeof upcomingEvents;
   wire: typeof wire;
 }>;

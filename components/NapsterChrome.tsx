@@ -4,9 +4,9 @@ import { FooterBannerAds, LeaderboardAd, SkyscraperAds } from "@/components/Y2KA
 
 export function NapsterChrome({ children }: { children: ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", padding: 12 }}>
+    <div className="napster-page-shell" style={{ minHeight: "100vh", padding: 12 }}>
       <TopBar />
-      <div className="win98" style={{ padding: 0, maxWidth: 1040, margin: "12px auto" }}>
+      <div className="win98 napster-window" style={{ padding: 0, maxWidth: 1040, margin: "12px auto" }}>
         <div className="win98-titlebar drag-stripes">
           <span>★ mixtAIpe.exe — [AI Mixtape Network]</span>
           <span style={{ display: "flex", gap: 2 }}>
@@ -19,8 +19,8 @@ export function NapsterChrome({ children }: { children: ReactNode }) {
           <Banner />
           <BrowserBadges />
           <LeaderboardAd />
-          <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, marginTop: 12 }}>
-            <div style={{ display: "grid", gap: 10, alignSelf: "start" }}>
+          <div className="napster-content-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, marginTop: 12 }}>
+            <div className="napster-sidebar-stack" style={{ display: "grid", gap: 10, alignSelf: "start" }}>
               <Sidebar />
               <SkyscraperAds />
             </div>
@@ -40,7 +40,7 @@ export function NapsterChrome({ children }: { children: ReactNode }) {
 
 function TopBar() {
   return (
-    <div className="marquee" style={{ maxWidth: 1040, margin: "0 auto" }}>
+    <div className="marquee top-marquee" style={{ maxWidth: 1040, margin: "0 auto" }}>
       <span className="marquee-inner">
         ★彡 WELCOME TO mixtAIpe — live AI mixtape P2L (peer-to-list) ★ backed by Convex + Google Trends ★
       </span>
