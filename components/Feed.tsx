@@ -574,9 +574,7 @@ function VibeBrief({ vibe, ingest, unlinkedTopicSlug }: VibeBriefProps) {
           <span className="vibe-brief__label">inspiration</span>
           {": "}
           <span>
-            No live ingest row linked — only the seed slug “
-            {unlinkedTopicSlug.replace(/_/g, " ")}” (freehand prompt, remix carry-over, or trend chip
-            no longer in the DB after a refresh).
+            Freehand room prompt → “{unlinkedTopicSlug.replace(/_/g, " ")}”
           </span>
         </div>
       ) : null}
