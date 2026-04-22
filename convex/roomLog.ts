@@ -48,6 +48,20 @@ export const insertTyping = mutation({
   },
 });
 
+export const sendHuman = mutation({
+  args: { text: v.string() },
+  handler: async (ctx, { text }) => {
+    const clean = text.replace(/\s+/g, " ").trim().slice(0, 220);
+    if (!clean) return null;
+    return ctx.db.insert("roomLog", {
+      kind: "human",
+      agentHandle: "you",
+      text: `<you> ${clean}`,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 export const tail = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 50 }) => {

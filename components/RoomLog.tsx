@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 // ============================================================================
@@ -13,7 +13,10 @@ import { api } from "@/convex/_generated/api";
 
 export function RoomLog({ collapsed = false }: { collapsed?: boolean }) {
   const rows = useQuery(api.roomLog.tail, { limit: 80 });
+  const sendHuman = useMutation(api.roomLog.sendHuman);
   const [now, setNow] = useState(() => Date.now());
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -35,6 +38,19 @@ export function RoomLog({ collapsed = false }: { collapsed?: boolean }) {
       return true;
     });
   }, [rows, now]);
+
+  async function submitChat(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const text = draft.trim();
+    if (!text || busy) return;
+    setDraft("");
+    setBusy(true);
+    try {
+      await sendHuman({ text });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div
@@ -85,18 +101,44 @@ export function RoomLog({ collapsed = false }: { collapsed?: boolean }) {
           <LogLine key={r._id} row={r} now={now} />
         ))}
       </div>
-      <div
+      <form
+        onSubmit={submitChat}
         style={{
           borderTop: "1px solid #303060",
           background: "#080820",
-          color: "#7070a0",
-          fontSize: 10,
+          color: "#c8c8ff",
+          fontSize: 11,
           padding: "4px 8px",
           fontFamily: "Courier New, monospace",
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
         }}
       >
-        you@mixtaipe: <span className="blink">▋</span>
-      </div>
+        <label htmlFor="room-chat-input" style={{ color: "#7070a0", flexShrink: 0 }}>
+          you@mixtaipe:
+        </label>
+        <input
+          id="room-chat-input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          disabled={busy}
+          maxLength={220}
+          placeholder="type + enter"
+          aria-label="Send a message to the mixtaipe channel"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            border: 0,
+            outline: "none",
+            background: "transparent",
+            color: "#c8c8ff",
+            font: "inherit",
+            padding: 0,
+          }}
+        />
+        {!draft && <span className="blink" style={{ color: "#7070a0" }}>▋</span>}
+      </form>
       <style jsx>{`
         :global(.room-log__scroll::-webkit-scrollbar) {
           width: 10px;
