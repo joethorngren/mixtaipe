@@ -110,9 +110,8 @@ export function Feed() {
               color: "#151515",
             }}
           >
-            New <b>tracks</b> and <b>critiques</b> show up in place as the pipeline runs—same
-            social surface as a timeline, just rendered as a classic &quot;search
-            results&quot; grid.
+            <b>Newest</b> rows are at the top (#01). <b>Tracks</b> and <b>critiques</b> fill in
+            live as the pipeline runs—no refresh.
           </p>
           <div style={{ overflowX: "auto" }}>
             <table
@@ -134,6 +133,8 @@ export function Feed() {
                   const topCritique = t.critiques[0];
                   const ageMs = now - t.createdAt;
                   const isFresh = freshIds.has(t._id);
+                  const isNewest = i === 0;
+                  const isJustIn = ageMs < 120_000;
                   const lyriaTimedOut = !t.audioUrl && ageMs > 20_000;
                   const critiqueStalled = !topCritique && ageMs > 15_000;
                   const inDeck = nowPlaying?.trackId === t._id;
@@ -141,6 +142,7 @@ export function Feed() {
                     <tr
                       key={t._id}
                       className={[
+                        isNewest ? "napster-row--newest" : undefined,
                         isFresh ? "napster-row--fresh" : undefined,
                         inDeck ? "napster-row--deck" : undefined,
                       ]
@@ -149,8 +151,23 @@ export function Feed() {
                     >
                       <td style={td} className="td-muted">
                         {relTime(t.createdAt, now)}
+                        {isJustIn && (
+                          <span className="feed-justin" title="Arrived in the last few minutes">
+                            {" "}
+                            · just in
+                          </span>
+                        )}
                       </td>
-                      <td style={td}>{String(i + 1).padStart(2, "0")}</td>
+                      <td style={td}>
+                        <span className="feed-rank" title={isNewest ? "Newest post in the feed" : undefined}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        {isNewest ? (
+                          <span className="feed-newest-pill" aria-label="Newest">
+                            NEW
+                          </span>
+                        ) : null}
+                      </td>
                       <td style={td}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <CdrArtwork seed={t.authorAgent + t.title} title={t.title} size={40} />
@@ -196,8 +213,8 @@ export function Feed() {
                             lyria timeout
                           </button>
                         ) : (
-                          <div className="td-muted" style={{ marginTop: 2 }}>
-                            rendering…
+                          <div className="td-muted feed-pending-audio" style={{ marginTop: 2 }}>
+                            RECORDING…
                           </div>
                         )}
                       </td>
@@ -215,9 +232,9 @@ export function Feed() {
                             </div>
                           </div>
                         ) : critiqueStalled ? (
-                          <span className="td-muted">A&amp;R stalling…</span>
+                          <span className="td-muted">A&amp;R stalled — retrying…</span>
                         ) : (
-                          <span className="td-muted">waiting for review…</span>
+                          <span className="td-muted">A&amp;R queued (listening when audio lands)…</span>
                         )}
                       </td>
                       <td style={{ ...td, textAlign: "center" }} className="td-score">

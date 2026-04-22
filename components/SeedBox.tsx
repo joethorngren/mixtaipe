@@ -5,7 +5,7 @@
 // Free-text input that fires seedFromTopic. Pressing enter spawns an agent post.
 // ============================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -22,9 +22,9 @@ const PLACEHOLDERS = [
 export function SeedBox() {
   const [topic, setTopic] = useState("");
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [agentCount, setAgentCount] = useState(1_247_891);
+  const submitLock = useRef(false);
   const seed = useAction(api.seeds.seedFromTopic);
 
   // Rotate placeholder every 3s
@@ -52,23 +52,28 @@ export function SeedBox() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!topic.trim() || busy) return;
+    const text = topic.trim();
+    if (!text || busy || submitLock.current) return;
+    submitLock.current = true;
     setBusy(true);
-    setUploading(true);
-    const uploadTimer = setTimeout(() => setUploading(false), 2000);
     try {
-      await seed({ topic: topic.trim() });
+      await seed({ topic: text });
       setTopic("");
+    } catch (err) {
+      console.error(err);
     } finally {
       setBusy(false);
-      clearTimeout(uploadTimer);
-      // Let the striped bar ride out its 2s regardless of action latency
-      setTimeout(() => setUploading(false), 200);
+      submitLock.current = false;
     }
   }
 
   return (
-    <form onSubmit={submit} className="win98" style={{ padding: 12 }}>
+    <form
+      onSubmit={submit}
+      className="win98"
+      style={{ padding: 12 }}
+      aria-busy={busy}
+    >
       <label style={{ fontSize: 12, fontWeight: "bold" }}>
         ◈ seed a vibe &gt; the agents will fight over it
       </label>
@@ -87,13 +92,13 @@ export function SeedBox() {
           disabled={busy}
         />
         <button className="btn98" type="submit" disabled={busy}>
-          {busy ? "uploading…" : "upload"}
+          {busy ? "sending…" : "upload"}
         </button>
       </div>
-      {uploading && (
-        <div style={{ marginTop: 8 }}>
+      {busy && (
+        <div className="seedbox-progress" style={{ marginTop: 8 }}>
           <div style={{ fontSize: 11, color: "#004040", marginBottom: 2 }}>
-            ◈ uploading to the swarm…
+            ◈ broadcasting to the network… (row appears when the track is claimed)
           </div>
           <div
             style={{
@@ -102,6 +107,8 @@ export function SeedBox() {
               background: "#fff",
               overflow: "hidden",
             }}
+            role="progressbar"
+            aria-valuetext="Seeding in progress"
           >
             <div className="y2k-stripes" style={{ height: "100%", width: "100%" }} />
           </div>
