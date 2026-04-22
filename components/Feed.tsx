@@ -14,6 +14,7 @@ import { Typewriter } from "./Typewriter";
 import { usePlayback } from "@/components/PlaybackProvider";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
+import { formatInspirationLine } from "@/lib/trendProvenance";
 
 function relTime(createdAt: number, now: number): string {
   const diff = Math.max(0, Math.floor((now - createdAt) / 1000));
@@ -231,7 +232,12 @@ export function Feed() {
                         ) : null}
                       </td>
                       <td style={td} className="td-critique">
-                        {t.vibe ? <VibeBrief vibe={t.vibe} /> : null}
+                        <VibeBrief
+                          vibe={t.vibe}
+                          trendIngestSource={t.trendIngestSource}
+                          trendIngestUrl={t.trendIngestUrl}
+                          trendIngestSummary={t.trendIngestSummary}
+                        />
                         {topCritique ? (
                           <div className="critique-block">
                             <span className="critique-who">
@@ -506,57 +512,108 @@ function HumanVoteButtons({ trackId }: { trackId: Id<"tracks"> }) {
 
 // ---------- Vibe brief -----------------------------------------------------
 
-type VibeBriefProps = {
-  vibe: {
-    category: string;
-    sentiment: string;
-    energy: number;
-    density: number;
-    era: string;
-    palette: string[];
-    hooks: string[];
-    avoid: string[];
-    reasoning: string;
-  };
+type VibeShape = {
+  category: string;
+  sentiment: string;
+  energy: number;
+  density: number;
+  era: string;
+  palette: string[];
+  hooks: string[];
+  avoid: string[];
+  reasoning: string;
 };
 
-function VibeBrief({ vibe }: VibeBriefProps) {
-  const tags = [
-    vibe.category,
-    vibe.sentiment,
-    `energy ${vibe.energy}/10`,
-    `density ${vibe.density}/10`,
-    vibe.era,
-  ].filter(Boolean);
+type VibeBriefProps = {
+  vibe?: VibeShape | null;
+  trendIngestSource?: string;
+  trendIngestUrl?: string;
+  trendIngestSummary?: string;
+};
+
+function VibeBrief({
+  vibe,
+  trendIngestSource,
+  trendIngestUrl,
+  trendIngestSummary,
+}: VibeBriefProps) {
+  const inspiration = formatInspirationLine({
+    source: trendIngestSource,
+    url: trendIngestUrl,
+    summary: trendIngestSummary,
+  });
+
+  if (!vibe && !inspiration) return null;
+
+  const tags = vibe
+    ? [
+        vibe.category,
+        vibe.sentiment,
+        `energy ${vibe.energy}/10`,
+        `density ${vibe.density}/10`,
+        vibe.era,
+      ].filter(Boolean)
+    : [];
 
   return (
     <div className="vibe-brief" aria-label="Producer's brief">
       <div className="vibe-brief__head">
         <span className="vibe-brief__badge">PRODUCER BRIEF</span>
         <span className="vibe-brief__dot" aria-hidden>·</span>
-        <span className="vibe-brief__note">trend → vibe IR (Gemini)</span>
+        <span className="vibe-brief__note">
+          {inspiration ? "live web seed → sound brief (Gemini)" : "trend → vibe IR (Gemini)"}
+        </span>
       </div>
-      <div className="vibe-brief__tags">
-        {tags.map((tag, i) => (
-          <span key={i} className="vibe-brief__tag">
-            {tag}
-          </span>
-        ))}
-      </div>
-      {vibe.hooks.length > 0 && (
-        <div className="vibe-brief__row">
-          <span className="vibe-brief__label">hooks:</span>{" "}
-          {vibe.hooks.slice(0, 2).join(" · ")}
+      {inspiration ? (
+        <div className="vibe-brief__inspiration">
+          <span className="vibe-brief__label">inspiration</span>
+          {inspiration.href ? (
+            <>
+              {": "}
+              <a
+                href={inspiration.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="vibe-brief__source-link"
+              >
+                {inspiration.line}
+              </a>
+            </>
+          ) : (
+            <>
+              {": "}
+              <span>{inspiration.line}</span>
+            </>
+          )}
         </div>
-      )}
-      {vibe.palette.length > 0 && (
-        <div className="vibe-brief__row">
-          <span className="vibe-brief__label">palette:</span>{" "}
-          {vibe.palette.slice(0, 4).join(", ")}
-        </div>
-      )}
-      {vibe.reasoning && (
-        <div className="vibe-brief__reasoning">&gt; {vibe.reasoning}</div>
+      ) : null}
+      {!vibe ? (
+        <div className="vibe-brief__row vibe-brief__pending-brief">structured brief still generating…</div>
+      ) : (
+        <>
+          <div className="vibe-brief__tags">
+            {tags.map((tag, i) => (
+              <span key={i} className="vibe-brief__tag">
+                {tag}
+              </span>
+            ))}
+          </div>
+          {vibe.hooks.length > 0 && (
+            <div className="vibe-brief__row">
+              <span className="vibe-brief__label">hooks:</span>{" "}
+              {vibe.hooks.slice(0, 2).join(" · ")}
+            </div>
+          )}
+          {vibe.palette.length > 0 && (
+            <div className="vibe-brief__row">
+              <span className="vibe-brief__label">palette:</span>{" "}
+              {vibe.palette.slice(0, 4).join(", ")}
+            </div>
+          )}
+          {vibe.reasoning && (
+            <div className="vibe-brief__reasoning">&gt; {vibe.reasoning}</div>
+          )}
+        </>
       )}
     </div>
   );

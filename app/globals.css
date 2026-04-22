@@ -607,6 +607,28 @@ html {
   font-size: 9px;
   letter-spacing: 0.05em;
 }
+.vibe-brief__inspiration {
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0 0 4px;
+  padding: 3px 4px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #d4b84a;
+  color: #1a1500;
+}
+.vibe-brief__source-link {
+  color: #0000a8;
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.vibe-brief__source-link:hover {
+  color: #0000e0;
+}
+.vibe-brief__pending-brief {
+  font-style: italic;
+  color: #5a4a00;
+}
 .vibe-brief__reasoning {
   margin-top: 3px;
   padding: 2px 0 0;
