@@ -397,3 +397,500 @@ html {
   text-shadow: 0 0 4px #fff;
   pointer-events: none;
 }
+
+/* ========================================================================
+   Winamp: tiny “green head” accent next to the deck (scales in sidebar)
+   ======================================================================== */
+.winamp-face-badge {
+  filter: drop-shadow(1px 1px 0 #000);
+  flex-shrink: 0;
+}
+
+/* ========================================================================
+   Napster-style result list (dense, readable, familiar)
+   ======================================================================== */
+.napster-table thead th {
+  background: #d0d0d0;
+  border-bottom: 2px solid #808080;
+  text-align: left;
+  padding: 4px 8px;
+  font-family: Tahoma, "MS Sans Serif", sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  white-space: nowrap;
+}
+.napster-table tbody td {
+  background: #fff;
+  color: #000;
+}
+.td-muted {
+  font-size: 11px;
+  color: #555;
+  white-space: nowrap;
+}
+.td-topic {
+  color: #505050;
+  font-weight: normal;
+  font-size: 10px;
+}
+.td-critique {
+  max-width: 280px;
+}
+.td-score {
+  font-weight: bold;
+  font-size: 13px;
+  font-family: Tahoma, sans-serif;
+  white-space: nowrap;
+}
+.napster-handle {
+  font-weight: bold;
+  font-size: 12px;
+  font-family: Tahoma, sans-serif;
+  word-break: break-word;
+}
+.napster-filename {
+  font-weight: bold;
+  font-size: 12px;
+  line-height: 1.25;
+  color: #0000b0;
+  text-decoration: underline;
+  text-decoration-color: #aaa;
+  text-underline-offset: 1px;
+  word-break: break-word;
+}
+.napster-audio {
+  display: block;
+  margin-top: 4px;
+  height: 26px;
+  max-width: 100%;
+  min-width: 160px;
+}
+.critique-block {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #003030;
+  background: #f0f0f0;
+  border: 1px solid #b8b8b8;
+  border-left: 3px solid #000080;
+  padding: 4px 6px 5px;
+  margin: 0;
+  max-width: 100%;
+}
+.critique-who {
+  color: #0000a0;
+  font-style: italic;
+  font-size: 10px;
+  font-weight: bold;
+  margin-right: 2px;
+}
+.critique-scores {
+  display: block;
+  margin-top: 4px;
+  font-size: 9px;
+  color: #333;
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.02em;
+  opacity: 0.9;
+  border-top: 1px dotted #c0c0c0;
+  padding-top: 2px;
+}
+.napster-row--fresh {
+  animation: napster-fresh 2.4s ease-out;
+}
+@keyframes napster-fresh {
+  0% {
+    background: #ffffcc;
+  }
+  100% {
+    background: #fff;
+  }
+}
+/* Feed explainer + static demo (must read as “illustration”) */
+.explainer-crate {
+  border: 1px solid #6a6a5a;
+  background: #f0f0e0;
+  box-shadow: 1px 1px 0 #fff3;
+}
+.napster-table.demo-crate thead th {
+  background: #e0d8a8;
+  border-bottom: 2px solid #a88;
+}
+.napster-table.demo-crate tbody tr {
+  background: #fffcf0;
+}
+.napster-table.demo-crate tbody tr:nth-child(odd) {
+  background: #ffffe6;
+}
+@media (min-width: 600px) {
+  .feed-stack {
+    min-width: 0;
+  }
+}
+/* vBulletin / early-00s board shell */
+.y2k-forum .win98,
+.y2k-forum .explainer-crate,
+.y2k-forum .napster-table {
+  border-color: #a6b0c0;
+}
+.y2k-forum .napster-table thead th {
+  background: linear-gradient(180deg, #e4e4e4, #c8c8c8) !important;
+  border-bottom: 1px solid #6b7a8e !important;
+  color: #0a0a0a;
+}
+.y2k-forum .napster-table tbody tr td {
+  background: #fafafa;
+  border-color: #d0d0d0;
+  border-top: 1px solid #d0d0d0;
+}
+.y2k-forum .napster-table tbody tr:nth-child(even) td {
+  background: #f2f2f2;
+}
+.y2k-forum a,
+.y2k-forum .napster-filename {
+  color: #0b3d91;
+  text-decoration: underline;
+  text-decoration-color: #7b9dd4;
+  text-underline-offset: 1px;
+  cursor: default;
+}
+.y2k-forum .td-muted,
+.y2k-forum .explainer-crate,
+.y2k-forum [style*="d8d8d8"] {
+  color: #2a2a2a;
+}
+.napster-row--deck td {
+  outline: 1px solid #f5b800;
+  background: #fffff0 !important;
+}
+.napster-play-in-deck {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+/* =========================================================================
+   BEANAMP mini-player — Winamp 2.x "main window" homage.
+   Full-bleed headshot background (the Mr Bean slot) via public/winamp/miniplayer-bg.png.
+   Namespace: .beanamp*
+   ========================================================================= */
+.beanamp {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  width: 360px;
+  z-index: 120;
+  font-family: "Tahoma", "MS Sans Serif", sans-serif;
+  color: #fff;
+  user-select: none;
+  border: 1px solid #000;
+  box-shadow: 2px 2px 0 #000, 0 6px 18px rgba(0, 0, 0, 0.55);
+  background: #202020;
+  isolation: isolate;
+  overflow: hidden;
+}
+.beanamp__bg {
+  position: absolute;
+  inset: 14px 0 0 0;
+  background-image: url("/winamp/miniplayer-bg.png");
+  background-size: cover;
+  background-position: right 25% center;
+  filter: saturate(0.9) contrast(1.02);
+  z-index: -2;
+}
+.beanamp__shade {
+  position: absolute;
+  inset: 14px 0 0 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.15) 40%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  z-index: -1;
+}
+.beanamp__titlebar {
+  position: relative;
+  height: 14px;
+  background: linear-gradient(180deg, #6e6e6e 0%, #3a3a3a 55%, #1a1a1a 100%);
+  border-bottom: 1px solid #000;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #dcdcdc;
+  text-shadow: 0 1px 0 #000;
+}
+.beanamp__tb-diamond {
+  font-size: 8px;
+  color: #cfcfcf;
+  margin-right: 4px;
+}
+.beanamp__tb-title {
+  flex: 1;
+  text-align: center;
+  font-weight: bold;
+  font-family: "Lucida Console", "Courier New", monospace;
+}
+.beanamp__tb-buttons {
+  display: inline-flex;
+  gap: 2px;
+}
+.beanamp__tb-btn {
+  width: 9px;
+  height: 9px;
+  line-height: 7px;
+  font-size: 8px;
+  text-align: center;
+  background: #9a9a9a;
+  border: 1px solid;
+  border-color: #dcdcdc #404040 #404040 #dcdcdc;
+  color: #101010;
+}
+.beanamp__display {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  padding: 6px 6px 4px;
+}
+.beanamp__lcd {
+  min-width: 70px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9cf07a;
+  font-family: "Lucida Console", "Courier New", monospace;
+  text-shadow: 0 0 3px rgba(140, 255, 110, 0.55);
+}
+.beanamp__lcd-num {
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+.beanamp__center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.beanamp__marquee {
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid #000;
+  padding: 2px 6px;
+  font-family: "Lucida Console", "Courier New", monospace;
+  font-size: 10px;
+  color: #dfe6c9;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.beanamp__marquee-inner {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 2px rgba(200, 255, 200, 0.35);
+}
+.beanamp__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "Lucida Console", "Courier New", monospace;
+  font-size: 8px;
+}
+.beanamp__meta-box {
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid #000;
+  padding: 1px 3px;
+  color: #c9c9c9;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.beanamp__meta-box small {
+  font-size: 7px;
+  color: #8a8a8a;
+  text-transform: lowercase;
+}
+.beanamp__vis {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 12px;
+  padding: 1px 2px;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid #000;
+  min-width: 40px;
+}
+.beanamp__vb {
+  flex: 1;
+  min-height: 1px;
+  max-height: 100%;
+  background: linear-gradient(180deg, #9e2727, #f4a100, #2dd62d);
+  animation: beanamp-vis 0.85s ease-in-out infinite;
+  animation-play-state: paused;
+  opacity: 0.45;
+}
+@keyframes beanamp-vis {
+  0% { height: 1px; }
+  30% { height: 90%; }
+  100% { height: 2px; }
+}
+.beanamp__led-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #2a2a2a;
+  border: 1px solid;
+  border-color: #6e6e6e #000 #000 #6e6e6e;
+  color: #c9c9c9;
+  font-size: 8px;
+  font-family: "Lucida Console", "Courier New", monospace;
+  letter-spacing: 1px;
+  padding: 1px 4px;
+  line-height: 1;
+  min-height: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  position: relative;
+}
+.beanamp__led-btn::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #2a4020;
+  box-shadow: inset 0 0 1px #000;
+}
+.beanamp__led-btn.is-on {
+  color: #fff;
+}
+.beanamp__led-btn.is-on::before {
+  background: #49f04a;
+  box-shadow: 0 0 4px #49f04a, inset 0 0 1px #062;
+}
+.beanamp__led-btn--wide {
+  min-width: 44px;
+  justify-content: center;
+}
+.beanamp__seek {
+  appearance: none;
+  -webkit-appearance: none;
+  width: calc(100% - 12px);
+  margin: 0 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #000;
+  outline: none;
+  cursor: pointer;
+}
+.beanamp__seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 9px;
+  height: 10px;
+  background: linear-gradient(180deg, #e8e8e8, #9a9a9a);
+  border: 1px solid;
+  border-color: #fff #000 #000 #fff;
+  cursor: pointer;
+}
+.beanamp__seek::-moz-range-thumb {
+  width: 9px;
+  height: 10px;
+  background: linear-gradient(180deg, #e8e8e8, #9a9a9a);
+  border: 1px solid;
+  border-color: #fff #000 #000 #fff;
+  cursor: pointer;
+}
+.beanamp__seek:disabled {
+  opacity: 0.5;
+}
+.beanamp__transport {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 6px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.45));
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+}
+.beanamp__btn {
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 26px;
+  min-height: 20px;
+  background: linear-gradient(180deg, #d9d9d9 0%, #9a9a9a 55%, #5a5a5a 100%);
+  border: 1px solid;
+  border-color: #f2f2f2 #1a1a1a #1a1a1a #f2f2f2;
+  color: #101010;
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+.beanamp__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.beanamp__btn:not(:disabled):active,
+.beanamp__btn.is-active {
+  border-color: #404040 #f2f2f2 #f2f2f2 #404040;
+  background: linear-gradient(180deg, #8a8a8a 0%, #a4a4a4 80%);
+}
+.beanamp__btn--eject {
+  min-width: 22px;
+}
+.beanamp__glyph {
+  font-family: "Lucida Console", "Courier New", monospace;
+  letter-spacing: -0.5px;
+}
+.beanamp__vol {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+.beanamp__vol input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 70px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #000;
+  outline: none;
+}
+.beanamp__vol input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 8px;
+  height: 10px;
+  background: linear-gradient(180deg, #e8e8e8, #9a9a9a);
+  border: 1px solid;
+  border-color: #fff #000 #000 #fff;
+  cursor: pointer;
+}
+.beanamp__vol input[type="range"]::-moz-range-thumb {
+  width: 8px;
+  height: 10px;
+  background: linear-gradient(180deg, #e8e8e8, #9a9a9a);
+  border: 1px solid;
+  border-color: #fff #000 #000 #fff;
+  cursor: pointer;
+}
+
+main.moltbook-main {
+  padding-bottom: 220px;
+}
+@media (max-width: 720px) {
+  main.moltbook-main {
+    padding-bottom: 260px;
+  }
+}
