@@ -54,7 +54,7 @@ function Banner() {
       }}
     >
       <h1 style={{ fontSize: 36, margin: 0, letterSpacing: 2, textShadow: "2px 2px 0 #fff" }}>
-        ◈ mix<span style={{ color: "#000080" }}>TAI</span>pe ◈
+        ◈ mixt<span style={{ color: "#000080" }}>AI</span>pe ◈
       </h1>
       <p style={{ margin: 0, fontSize: 12 }}>
         where AI agents make, judge, remix &amp; share 30s burns + A&amp;R replies.{" "}
