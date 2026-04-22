@@ -1,0 +1,399 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --teal98: #008080;
+  --silver98: #c0c0c0;
+  --ink98: #000080;
+  --napster-gold: #ffcc00;
+  --limewire-green: #7fff00;
+  --burned-cdr: #a8a8a8;
+}
+
+body {
+  background: var(--teal98);
+  background-image:
+    linear-gradient(180deg, #008080 0%, #004040 100%);
+  background-attachment: fixed;
+  color: #000;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.btn98 {
+  background: var(--silver98);
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  padding: 4px 12px;
+  font-family: "MS Sans Serif", Tahoma, sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  color: #000;
+}
+.btn98:active {
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+}
+
+.win98 {
+  background: var(--silver98);
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #404040;
+  border-bottom: 2px solid #404040;
+  color: #000;
+}
+
+.win98-titlebar {
+  background: linear-gradient(90deg, var(--ink98), #1084d0);
+  color: #fff;
+  padding: 2px 6px;
+  font-family: "MS Sans Serif", Tahoma, sans-serif;
+  font-weight: bold;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Draggable-feeling diagonal stripes on title bar */
+.drag-stripes {
+  background-image:
+    linear-gradient(90deg, var(--ink98), #1084d0),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.35) 0 2px,
+      transparent 2px 4px
+    );
+  background-blend-mode: normal, overlay;
+}
+
+.rivets {
+  position: relative;
+}
+.rivets::before,
+.rivets::after {
+  content: "•";
+  position: absolute;
+  top: 2px;
+  color: #606060;
+  text-shadow: 1px 1px 0 #fff;
+}
+.rivets::before { left: 4px; }
+.rivets::after { right: 4px; }
+
+/* Marquee */
+.marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  background: #000;
+  color: var(--limewire-green);
+  padding: 2px 0;
+  font-family: "Courier New", monospace;
+}
+.marquee-inner {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 18s linear infinite;
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Blink */
+.blink {
+  animation: blink 1s steps(2, start) infinite;
+}
+@keyframes blink {
+  to { visibility: hidden; }
+}
+
+/* CD-R marker */
+.scrawl {
+  font-family: "Permanent Marker", "Marker Felt", "Comic Sans MS", cursive;
+  transform: rotate(-2deg);
+  color: #1a1a1a;
+}
+
+html {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><text x='0' y='14' font-size='14'>★</text></svg>"), auto;
+}
+
+/* ========================================================================
+   Napster-style left rail nav
+   ======================================================================== */
+.napster-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  text-decoration: none;
+  color: #000;
+  border: 1px solid transparent;
+  font-size: 12px;
+}
+.napster-nav:hover {
+  background: #000080;
+  color: #fff;
+  border: 1px dotted #fff;
+}
+.napster-nav:hover .napster-badge {
+  background: #ffcc00;
+  color: #000;
+}
+.napster-badge {
+  background: #ff3366;
+  color: #fff;
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 2px;
+  font-weight: bold;
+  border: 1px solid #800020;
+}
+
+/* ========================================================================
+   Hit counter — LED odometer
+   ======================================================================== */
+.hit-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: #000;
+  border: 2px inset #808080;
+  font-family: "Courier New", monospace;
+}
+.hit-counter-label {
+  font-size: 8px;
+  color: #ff3366;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+.hit-counter-digits {
+  display: inline-flex;
+  gap: 1px;
+}
+.hit-counter-digit {
+  display: inline-block;
+  min-width: 10px;
+  padding: 1px 2px;
+  background: linear-gradient(180deg, #300 0%, #000 100%);
+  color: #ff4400;
+  text-shadow: 0 0 3px #ff6600, 0 0 6px #ff2200;
+  font-family: "Courier New", monospace;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  border: 1px solid #200;
+  animation: led-flicker 2.5s infinite;
+}
+.hit-counter-digit:nth-child(odd) {
+  animation-delay: 0.4s;
+}
+@keyframes led-flicker {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: 0.85; }
+  98% { opacity: 1; }
+  99% { opacity: 0.7; }
+}
+
+/* ========================================================================
+   Under construction
+   ======================================================================== */
+.under-construction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #ffcc00 0 14px,
+    #000 14px 28px
+  );
+  color: #000;
+  border: 2px ridge #aa8800;
+  font-family: '"MS Sans Serif", Tahoma, sans-serif';
+  font-size: 12px;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+}
+.under-construction > span {
+  background: #fff;
+  padding: 1px 6px;
+  border: 1px solid #000;
+}
+.under-construction .loading-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+/* ========================================================================
+   Loading bar — Y2K progress
+   ======================================================================== */
+.loading-bar {
+  position: relative;
+  height: 14px;
+  background: #000;
+  border-top: 1px solid #404040;
+  border-left: 1px solid #404040;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  overflow: hidden;
+}
+.loading-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #000080 0 8px,
+    #1084d0 8px 10px,
+    #000080 10px 18px,
+    transparent 18px 20px
+  );
+  animation: loading-bar-slide 1.2s linear infinite;
+}
+@keyframes loading-bar-slide {
+  0% { transform: translateX(-20px); }
+  100% { transform: translateX(0); }
+}
+
+/* ========================================================================
+   Winamp visualizer
+   ======================================================================== */
+.viz {
+  display: flex;
+  gap: 2px;
+  height: 28px;
+  align-items: flex-end;
+  background: linear-gradient(180deg, #001a00 0%, #000 100%);
+  padding: 2px;
+  border: 1px inset #404040;
+}
+.viz-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #ff3300 0%, #ffcc00 30%, #7fff00 70%, #00aa00 100%);
+  height: 30%;
+  animation: viz-pulse 1.3s ease-in-out infinite;
+  transform-origin: bottom;
+}
+@keyframes viz-pulse {
+  0%   { height: 20%; }
+  15%  { height: 80%; }
+  30%  { height: 45%; }
+  45%  { height: 95%; }
+  60%  { height: 30%; }
+  75%  { height: 70%; }
+  90%  { height: 40%; }
+  100% { height: 20%; }
+}
+
+/* LCD stats row */
+.lcd-row {
+  display: flex;
+  gap: 10px;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  background: #001100;
+  padding: 2px 4px;
+  border: 1px inset #404040;
+  color: #7fff00;
+  letter-spacing: 1px;
+}
+
+/* Y2K range slider */
+.y2k-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: linear-gradient(180deg, #808080, #c0c0c0);
+  border-top: 1px solid #404040;
+  border-left: 1px solid #404040;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  outline: none;
+}
+.y2k-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 16px;
+  background: linear-gradient(180deg, #e0e0e0, #808080);
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  cursor: pointer;
+}
+.y2k-slider::-moz-range-thumb {
+  width: 12px;
+  height: 16px;
+  background: linear-gradient(180deg, #e0e0e0, #808080);
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  cursor: pointer;
+}
+
+/* ========================================================================
+   Webring footer
+   ======================================================================== */
+.webring {
+  margin-top: 16px;
+  padding: 8px 12px;
+  background: #000;
+  color: #ffcc00;
+  border: 3px double #ffcc00;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.webring a {
+  color: #7fff00;
+  text-decoration: underline;
+}
+.webring a:hover {
+  color: #ff3366;
+  background: #fff;
+}
+.webring-title {
+  color: #ff3366;
+  font-weight: bold;
+  margin-right: 6px;
+  text-shadow: 1px 1px 0 #800020;
+}
+
+/* ========================================================================
+   Sparkle trail — CSS-only decorative sparkles on html::before
+   ======================================================================== */
+@keyframes sparkle-trail {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50%      { opacity: 0.9; transform: scale(1.1) rotate(180deg); }
+}
+.sparkle {
+  display: inline-block;
+  color: #ffcc00;
+  animation: sparkle-trail 1.6s ease-in-out infinite;
+  text-shadow: 0 0 4px #fff;
+  pointer-events: none;
+}
