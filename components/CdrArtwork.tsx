@@ -2,15 +2,35 @@ type CdrSize = "small" | "large" | number;
 
 const ALT_TITLES = ["Final", "Demo", "Draft", "v2", "Rough", "MIX", "Untitled", "Take 1"];
 
+type CdrArtworkProps = {
+  seed: string;
+  title?: string;
+  size?: CdrSize;
+  /**
+   * When provided, the disc renders as an interactive <button> (play control).
+   * The caller drives visuals via `isPlaying` / `isLoaded`.
+   */
+  onPlayToggle?: () => void;
+  /** Spin the disc (track is loaded AND the deck's audio is actively playing). */
+  isPlaying?: boolean;
+  /** The track is the one currently loaded in the deck (possibly paused). */
+  isLoaded?: boolean;
+  /** Greyed-out / non-interactive (e.g. demo rows or tracks still rendering). */
+  disabled?: boolean;
+  /** Tooltip shown instead of the default "Play {title}" hint. */
+  hint?: string;
+};
+
 export function CdrArtwork({
   seed,
   title,
   size = 48,
-}: {
-  seed: string;
-  title?: string;
-  size?: CdrSize;
-}) {
+  onPlayToggle,
+  isPlaying = false,
+  isLoaded = false,
+  disabled = false,
+  hint,
+}: CdrArtworkProps) {
   const px = typeof size === "number" ? size : size === "large" ? 160 : 48;
   const h = hash(seed);
   const rot = (h % 40) - 20;
@@ -25,8 +45,15 @@ export function CdrArtwork({
   const fontSize = px >= 120 ? 14 : px >= 80 ? 9 : 5;
   const altFontSize = px >= 120 ? 10 : px >= 80 ? 7 : 4;
 
-  return (
-    <svg width={px} height={px} viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+  const svg = (
+    <svg
+      width={px}
+      height={px}
+      viewBox="0 0 48 48"
+      className={`cdr-artwork__svg${isPlaying ? " cdr-artwork__svg--spinning" : ""}`}
+      style={{ flexShrink: 0, display: "block" }}
+      aria-hidden={onPlayToggle ? true : undefined}
+    >
       <defs>
         <radialGradient id={`g-${seed}`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#e8e8e8" />
@@ -89,6 +116,47 @@ export function CdrArtwork({
         />
       </g>
     </svg>
+  );
+
+  if (!onPlayToggle) {
+    return <span className="cdr-artwork" style={{ width: px, height: px }}>{svg}</span>;
+  }
+
+  const label = hint
+    ?? (disabled
+      ? `${title ?? "demo track"} — demo row, not playable`
+      : isLoaded
+        ? `${isPlaying ? "Eject" : "Re-cue"} ${title ?? "track"} from the deck`
+        : `Play ${title ?? "track"} in the deck`);
+
+  const stateClass = [
+    "cdr-artwork",
+    "cdr-artwork--button",
+    isLoaded ? "cdr-artwork--loaded" : undefined,
+    isPlaying ? "cdr-artwork--playing" : undefined,
+    disabled ? "cdr-artwork--disabled" : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <button
+      type="button"
+      className={stateClass}
+      onClick={disabled ? undefined : onPlayToggle}
+      disabled={disabled}
+      aria-label={label}
+      aria-pressed={isLoaded}
+      title={label}
+      style={{ width: px, height: px }}
+    >
+      {svg}
+      <span className="cdr-artwork__overlay" aria-hidden>
+        <span className="cdr-artwork__glyph">
+          {disabled ? "–" : isPlaying ? "❙❙" : "▶"}
+        </span>
+      </span>
+    </button>
   );
 }
 

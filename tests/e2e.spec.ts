@@ -119,8 +119,6 @@ test.describe("Demo loop", () => {
     await seedTopicsIfMissing(page);
     await page.goto("/");
 
-    const rowCountBefore = await page.locator(FEED_ROW).count();
-
     // Pick the first non-hero chip so we don't collide with any pre-seeded
     // tamagotchi_funeral work. The button text contains "#<topic> NN°".
     const chip = page
@@ -132,30 +130,17 @@ test.describe("Demo loop", () => {
     expect(chipTopic, "expected chip label to contain a #topic").not.toBe("");
     await chip.click();
 
-    // Wait for row count to grow. Playwright retries inside the expect timeout.
-    await expect
-      .poll(() => page.locator(FEED_ROW).count(), { timeout: 20_000 })
-      .toBeGreaterThan(rowCountBefore);
-
-    // Scope to rows whose text contains our topic slug. Newest-first, so the
-    // row we just created is on top of that filtered set. This avoids the
-    // race where an unrelated prior row sits above our new row between
-    // reactive updates.
-    const ourRow = page
-      .locator(FEED_ROW)
-      .filter({ hasText: new RegExp(chipTopic, "i") })
-      .first();
-    await expect(ourRow).toBeVisible({ timeout: 10_000 });
+    const ourRow = waitForFeedRow(chipTopic, { requireCritique: true });
 
     // Author handle (one of the 5 personas).
-    await expect(ourRow).toContainText(
+    expect(ourRow.authorAgent).toMatch(
       /DJ_ShadowCore|xX_BassDaddy_Xx|ModemGhost99|NapsterPriestess|DialUpDeacon/i,
     );
     // File-style title with .mp3 extension.
-    await expect(ourRow).toContainText(/\.mp3/i);
+    expect(ourRow.title).toMatch(/\.mp3/i);
 
     // Critic attaches — verdict line starts with the critic handle.
-    await expect(ourRow).toContainText(/DJ_A&R_98|A&R/i, { timeout: 20_000 });
+    expect(ourRow.critiques[0]?.criticAgent).toMatch(/DJ_A&R_98|A&R/i);
   });
 });
 
@@ -164,7 +149,7 @@ test.describe("Demo loop", () => {
 // Chip click is covered in "Demo loop" above. This block covers:
 //   - SeedBox upload button (full submit flow, not just typing)
 //   - Enter-to-submit on SeedBox (same flow, different input path)
-//   - "Play in deck" row buttons (Beanamp deck source swap)
+//   - Interactive row discs (Beanamp deck source swap)
 // ---------------------------------------------------------------------------
 
 test.describe("Buttons", () => {
@@ -178,8 +163,6 @@ test.describe("Buttons", () => {
     const input = page.getByRole("textbox").first();
     await input.fill(topic);
 
-    const rowsBefore = await page.locator(FEED_ROW).count();
-
     // Button is labeled "upload" when idle, "sending…" while the action runs.
     // Match by accessible name; disabled transitions are auto-waited by
     // Playwright.
@@ -187,17 +170,11 @@ test.describe("Buttons", () => {
     await expect(uploadBtn).toBeEnabled();
     await uploadBtn.click();
 
-    await expect
-      .poll(() => page.locator(FEED_ROW).count(), { timeout: 20_000 })
-      .toBeGreaterThan(rowsBefore);
-
-    // The row we created should be locatable by our unique topic.
-    const ourRow = page
-      .locator(FEED_ROW)
-      .filter({ hasText: new RegExp(topic.replace(/-/g, "[-_]"), "i") })
-      .first();
-    await expect(ourRow).toBeVisible({ timeout: 10_000 });
-    await expect(ourRow).toContainText(/\.mp3/i);
+    // The visible feed is ranked now, so a brand-new low-scoring track is not
+    // guaranteed to remain on screen. Verify the submitted topic landed in
+    // the backend feed instead.
+    const ourRow = await waitForFeedRow(topic);
+    expect(ourRow.title).toMatch(/\.mp3/i);
 
     // The row appears before the full action returns; SeedBox clears only
     // after the generation action resolves, which can be slower when Lyria
@@ -214,18 +191,9 @@ test.describe("Buttons", () => {
     const input = page.getByRole("textbox").first();
     await input.fill(topic);
 
-    const rowsBefore = await page.locator(FEED_ROW).count();
     await input.press("Enter");
 
-    await expect
-      .poll(() => page.locator(FEED_ROW).count(), { timeout: 20_000 })
-      .toBeGreaterThan(rowsBefore);
-
-    const ourRow = page
-      .locator(FEED_ROW)
-      .filter({ hasText: new RegExp(topic.replace(/-/g, "[-_]"), "i") })
-      .first();
-    await expect(ourRow).toBeVisible({ timeout: 10_000 });
+    await waitForFeedRow(topic);
   });
 
   test("empty submit is a no-op (no new row, no crash)", async ({ page }) => {
@@ -248,7 +216,7 @@ test.describe("Buttons", () => {
     expect(rowsAfter).toBe(rowsBefore);
   });
 
-  test("every feed row exposes a 'Play in deck' button, and clicking one loads that track", async ({ page }) => {
+  test("every feed row exposes a playable disc, and clicking one loads that track", async ({ page }) => {
     // Make sure the feed has at least one row to play.
     await ensureAtLeastOneTrack(page);
     await page.goto("/");
@@ -258,8 +226,8 @@ test.describe("Buttons", () => {
     const rowCount = await rows.count();
     expect(rowCount).toBeGreaterThan(0);
 
-    // Every row has its own play button.
-    const playButtons = page.getByRole("button", { name: /play in deck/i });
+    // Every row has its own accessible disc play control.
+    const playButtons = page.getByRole("button", { name: /play .* in the deck/i });
     await expect
       .poll(() => playButtons.count(), { timeout: 5_000 })
       .toBeGreaterThanOrEqual(rowCount);
@@ -316,12 +284,7 @@ test.describe("Convex pipeline (integration)", () => {
     const topic = `e2e-suite-${Date.now()}`;
     convexRun("seeds:seedFromTopic", { topic });
 
-    // listFeed returns newest-first, so the row we just created should be
-    // near the top. Fetch enough to be safe.
-    const rows = convexRun<FeedRow[]>("tracks:listFeed", { limit: 10 });
-    const ours = rows.find((r) => r.topic === topic);
-    expect(ours, `expected a row with topic=${topic} in the feed`).toBeDefined();
-    if (!ours) return;
+    const ours = waitForFeedRow(topic, { requireCritique: true });
 
     assertRowShape(ours);
     expect(ours.critiques.length).toBeGreaterThan(0);
@@ -415,16 +378,35 @@ async function stableRowCount(page: Page, settleMs = 800, maxWaitMs = 5_000): Pr
 }
 
 /**
- * Make sure the feed has at least one row. If empty, seed one via the
- * Convex CLI so the Play-in-deck test always has something to click.
+ * Make sure the ranked feed has at least one playable row. If empty, seed one
+ * via the Convex CLI so the disc-control test always has something to click.
  */
 async function ensureAtLeastOneTrack(page: Page) {
-  const existing = convexRun<FeedRow[]>("tracks:listFeed", { limit: 1 });
+  const existing = convexRun<FeedRow[]>("tracks:listTopFeed", { limit: 1 });
   if (existing.length === 0) {
     convexRun("seeds:seedFromTopic", { topic: `e2e-bootstrap-${Date.now()}` });
     // Reactive query needs a tick to propagate to the browser.
     await page.waitForTimeout(500);
   }
+}
+
+function waitForFeedRow(
+  topic: string,
+  opts: { requireCritique?: boolean } = {},
+): FeedRow {
+  const deadline = Date.now() + 20_000;
+  while (Date.now() < deadline) {
+    try {
+      const rows = convexRun<FeedRow[]>("tracks:listFeed", { limit: 200 });
+      const row = rows.find((r) => r.topic === topic);
+      if (row && (!opts.requireCritique || row.critiques.length > 0)) return row;
+    } catch {
+      // Convex CLI can occasionally emit incomplete stdout while the local
+      // dev deployment is hot-reloading; keep polling.
+    }
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1_000);
+  }
+  throw new Error(`expected a row with topic=${topic} in the feed`);
 }
 
 /**
