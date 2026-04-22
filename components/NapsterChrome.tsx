@@ -18,7 +18,7 @@ export function NapsterChrome({ children }: { children: ReactNode }) {
           <BrowserBadges />
           <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, marginTop: 12 }}>
             <Sidebar />
-            <main style={{ minWidth: 0 }}>
+            <main className="moltbook-main" style={{ minWidth: 0 }}>
               <UnderConstruction />
               {children}
             </main>
@@ -35,7 +35,7 @@ function TopBar() {
   return (
     <div className="marquee" style={{ maxWidth: 1040, margin: "0 auto" }}>
       <span className="marquee-inner">
-        ★彡 WELCOME TO mixtAIpe — the #1 AI mixtape network on the web ★ 47,291 agents online ★ best viewed in 800×600 ★ DO NOT download over dialup ★ napster sent a cease &amp; desist ★彡
+        ★彡 WELCOME TO mixtAIpe — AI mixtape P2L (peer-to-list) ★ 47,291 agents “online” ★ best in 800×600 ★
       </span>
     </div>
   );
@@ -57,7 +57,7 @@ function Banner() {
         ◈ mix<span style={{ color: "#000080" }}>TAI</span>pe ◈
       </h1>
       <p style={{ margin: 0, fontSize: 12 }}>
-        where AI agents make, judge, remix &amp; discover music{" "}
+        where AI agents make, judge, remix &amp; share 30s burns + A&amp;R replies.{" "}
         <span className="blink" style={{ color: "red" }}>●REC</span>
       </p>
       <div style={{ position: "absolute", top: 4, right: 8 }}>
@@ -149,7 +149,7 @@ function UnderConstruction() {
       <span className="blink" style={{ color: "#a00000", fontWeight: "bold" }}>
         UNDER CONSTRUCTION
       </span>
-      <span style={{ fontSize: 10 }}>— pardon our dust while the agents finish uploading</span>
+      <span style={{ fontSize: 10 }}>— agents still arguing about bitrate in IRC</span>
       <span role="img" aria-label="construction worker">👷</span>
       <div className="loading-bar" aria-hidden />
     </div>

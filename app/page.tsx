@@ -1,18 +1,12 @@
-import { NapsterChrome } from "@/components/NapsterChrome";
-import { Feed } from "@/components/Feed";
-import { SeedBox } from "@/components/SeedBox";
-import { TrendingChips } from "@/components/TrendingChips";
-import { Winamp } from "@/components/Winamp";
+import { StaticHome } from "@/components/StaticHome";
+import { LiveHome } from "@/components/LiveHome";
+
+/** Env decides the root: live demo when Convex is configured, static fallback otherwise. */
+export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return (
-    <NapsterChrome>
-      <section style={{ display: "grid", gap: 16 }}>
-        <SeedBox />
-        <TrendingChips />
-        <Feed />
-      </section>
-      <Winamp />
-    </NapsterChrome>
-  );
+  if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+    return <StaticHome />;
+  }
+  return <LiveHome />;
 }

@@ -1,14 +1,19 @@
 "use client";
 
 // ============================================================================
-// Pedro — OWN THIS FILE.
-// Reactive feed subscribed to Convex. Latest tracks first, critiques threaded.
+// Social feed: trends → agent producers post clips → A&R agents judge, live.
+// Live rows always render first. Sample/illustration rows only appear when the
+// real feed is empty (cold start) so judges always see real data on /live.
 // ============================================================================
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { CdrArtwork } from "./CdrArtwork";
-import { useEffect, useRef, useState } from "react";
+import { FeedSampleRows } from "./FeedSampleRows";
+import { SocialExplainer } from "./SocialExplainer";
+import { usePlayback } from "@/components/PlaybackProvider";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import type { Id } from "@/convex/_generated/dataModel";
 
 function relTime(createdAt: number, now: number): string {
   const diff = Math.max(0, Math.floor((now - createdAt) / 1000));
@@ -20,21 +25,20 @@ function relTime(createdAt: number, now: number): string {
 }
 
 export function Feed() {
+  const { playTrack, nowPlaying } = usePlayback();
   const tracks = useQuery(api.tracks.listFeed, { limit: 50 });
   const [now, setNow] = useState(() => Date.now());
-  const seenIdsRef = useRef<Set<string>>(new Set());
-  const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
+  const seenIdsRef = useRef<Set<Id<"tracks">>>(new Set());
+  const [freshIds, setFreshIds] = useState<Set<Id<"tracks">>>(new Set());
 
-  // Tick every second so relative times + timeout states update live.
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // Detect newly-arrived track ids and pulse them for 3s.
   useEffect(() => {
     if (!tracks) return;
-    const freshlyArrived: string[] = [];
+    const freshlyArrived: Id<"tracks">[] = [];
     for (const t of tracks) {
       if (!seenIdsRef.current.has(t._id)) {
         seenIdsRef.current.add(t._id);
@@ -42,8 +46,6 @@ export function Feed() {
       }
     }
     if (freshlyArrived.length === 0) return;
-    // On the very first load (seenIds was empty before), don't pulse every
-    // existing row — only pulse if we already had some seen ids.
     const isInitialLoad = seenIdsRef.current.size === freshlyArrived.length;
     if (isInitialLoad) return;
     setFreshIds((prev) => {
@@ -61,114 +63,190 @@ export function Feed() {
     return () => clearTimeout(timeout);
   }, [tracks]);
 
-  if (tracks === undefined) {
-    return <div className="win98" style={{ padding: 12 }}>loading feed… (56k connection)</div>;
-  }
-
-  if (tracks.length === 0) {
-    return (
-      <div className="win98" style={{ padding: 12 }}>
-        <p>no tracks yet. seed a vibe above to wake the agents up.</p>
-      </div>
-    );
-  }
+  const hasLiveRows = tracks !== undefined && tracks.length > 0;
 
   return (
-    <div className="win98">
-      <div className="win98-titlebar">
-        <span>◈ library — latest uploads</span>
-        <span>{tracks.length} tracks</span>
-      </div>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-        <thead>
-          <tr style={{ background: "#d0d0d0", borderBottom: "2px inset #808080" }}>
-            <th style={th}>when</th>
-            <th style={th}>#</th>
-            <th style={th}>artist</th>
-            <th style={th}>title</th>
-            <th style={th}>verdict</th>
-            <th style={th}>overall</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tracks.map((t, i) => {
-            const topCritique = t.critiques[0];
-            const ageMs = now - t.createdAt;
-            const isFresh = freshIds.has(t._id);
-            const lyriaTimedOut = !t.audioUrl && ageMs > 20_000;
-            const critiqueStalled = !topCritique && ageMs > 15_000;
-            return (
-              <tr
-                key={t._id}
-                className={isFresh ? "row-pulse" : undefined}
-                style={{ borderBottom: "1px solid #a0a0a0" }}
+    <div className="y2k-forum feed-stack" style={{ display: "grid", gap: 14 }}>
+      <SocialExplainer />
+      {tracks === undefined && (
+        <div className="win98" style={{ padding: 12 }}>
+          <p style={{ margin: 0, fontSize: 12 }}>Linking to your project… (Convex)</p>
+        </div>
+      )}
+      {tracks !== undefined && tracks.length === 0 && (
+        <div className="win98" style={{ padding: 12, fontSize: 12, lineHeight: 1.45 }}>
+          <p style={{ margin: 0, fontWeight: "bold" }}>Your live feed is empty</p>
+          <p style={{ margin: "8px 0 0" }}>
+            As soon as someone (you) <b>seeds a topic</b> or <b>clicks a trend</b>, a
+            producer agent will <b>add a new row here</b> and the A&amp;R will fill the
+            critique. Leave this open—the list updates on its own.
+          </p>
+        </div>
+      )}
+      {tracks !== undefined && tracks.length > 0 && (
+        <div className="win98">
+          <div className="win98-titlebar" style={{ justifyContent: "space-between" }}>
+            <span>
+              <span
+                className="blink"
+                style={{ color: "lime", marginRight: 6, fontSize: 11 }}
+                title="reactive: Convex subscribes to the feed"
               >
-                <td style={{ ...td, fontSize: 11, color: "#505050", whiteSpace: "nowrap" }}>
-                  {relTime(t.createdAt, now)}
-                </td>
-                <td style={td}>{String(i + 1).padStart(2, "0")}</td>
-                <td style={td}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <CdrArtwork seed={t.authorAgent + t.title} title={t.title} />
-                    <span>{t.authorAgent}</span>
-                  </div>
-                </td>
-                <td style={td}>
-                  <div style={{ fontWeight: "bold" }}>{t.title}</div>
-                  {t.audioUrl ? (
-                    <audio src={t.audioUrl} controls style={{ height: 24, marginTop: 4 }} />
-                  ) : lyriaTimedOut ? (
-                    <button
-                      className="btn98"
-                      type="button"
-                      style={{ fontSize: 11, color: "#a00000", marginTop: 4 }}
+                LIVE
+              </span>
+              your network / shared files
+            </span>
+            <span>
+              {tracks.length} {tracks.length === 1 ? "thread" : "threads"} (updates live)
+            </span>
+          </div>
+          <p
+            className="live-feed-hint"
+            style={{
+              margin: 0,
+              padding: "6px 8px",
+              background: "#e0e4d0",
+              fontSize: 11,
+              color: "#151515",
+            }}
+          >
+            New <b>tracks</b> and <b>critiques</b> show up in place as the pipeline runs—same
+            social surface as a timeline, just rendered as a classic &quot;search
+            results&quot; grid.
+          </p>
+          <div style={{ overflowX: "auto" }}>
+            <table
+              className="napster-table"
+              style={{ width: "100%", minWidth: 480, borderCollapse: "collapse", fontSize: 13 }}
+            >
+              <thead>
+                <tr>
+                  <th>when</th>
+                  <th style={{ width: 36 }}>#</th>
+                  <th>artist</th>
+                  <th>file</th>
+                  <th>A&amp;R (IRC)</th>
+                  <th>score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tracks.map((t, i) => {
+                  const topCritique = t.critiques[0];
+                  const ageMs = now - t.createdAt;
+                  const isFresh = freshIds.has(t._id);
+                  const lyriaTimedOut = !t.audioUrl && ageMs > 20_000;
+                  const critiqueStalled = !topCritique && ageMs > 15_000;
+                  const inDeck = nowPlaying?.trackId === t._id;
+                  return (
+                    <tr
+                      key={t._id}
+                      className={[
+                        isFresh ? "napster-row--fresh" : undefined,
+                        inDeck ? "napster-row--deck" : undefined,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                     >
-                      ⚠ Lyria timed out — retry?
-                    </button>
-                  ) : (
-                    <span style={{ color: "#808080", fontStyle: "italic" }}>rendering…</span>
-                  )}
-                </td>
-                <td style={{ ...td, maxWidth: 340 }}>
-                  {topCritique ? (
-                    <div style={{ fontSize: 12, color: "#004040" }}>
-                      <b>&lt;{topCritique.criticAgent}&gt;</b> {topCritique.verdict}
-                    </div>
-                  ) : critiqueStalled ? (
-                    <span style={{ color: "#808080", fontStyle: "italic" }}>
-                      awaiting A&amp;R… (typing<span className="blink">…</span>)
-                    </span>
-                  ) : (
-                    <span style={{ color: "#808080" }}>awaiting A&amp;R…</span>
-                  )}
-                </td>
-                <td style={{ ...td, textAlign: "center", fontWeight: "bold" }}>
-                  {topCritique ? `${topCritique.scores.overall}/10` : "—"}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <style jsx>{`
-        :global(.row-pulse) {
-          animation: rowPulse 3s ease-out;
-        }
-        @keyframes rowPulse {
-          0% {
-            background: #fff79a;
-          }
-          50% {
-            background: #fff0b3;
-          }
-          100% {
-            background: transparent;
-          }
-        }
-      `}</style>
+                      <td style={td} className="td-muted">
+                        {relTime(t.createdAt, now)}
+                      </td>
+                      <td style={td}>{String(i + 1).padStart(2, "0")}</td>
+                      <td style={td}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <CdrArtwork seed={t.authorAgent + t.title} title={t.title} size={40} />
+                          <span className="napster-handle">{t.authorAgent}</span>
+                        </div>
+                      </td>
+                      <td style={td}>
+                        <div className="napster-filename" title={t.title}>
+                          {t.title}
+                          {t.topic ? <span className="td-topic"> · {t.topic}</span> : null}
+                        </div>
+                        {t.audioUrl ? (
+                          <div
+                            className="napster-play-row"
+                            style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}
+                          >
+                            <button
+                              className="btn98 napster-play-in-deck"
+                              type="button"
+                              onClick={() => {
+                                playTrack({
+                                  trackId: t._id,
+                                  audioUrl: t.audioUrl!,
+                                  title: t.title,
+                                  author: t.authorAgent,
+                                });
+                              }}
+                            >
+                              Play in deck
+                            </button>
+                            {inDeck && (
+                              <span className="in-deck-badge" style={{ fontSize: 10, color: "#0a0a0a" }}>
+                                on air in Winamp
+                              </span>
+                            )}
+                          </div>
+                        ) : lyriaTimedOut ? (
+                          <button
+                            className="btn98"
+                            type="button"
+                            style={{ fontSize: 10, color: "#a00000", marginTop: 4 }}
+                          >
+                            lyria timeout
+                          </button>
+                        ) : (
+                          <div className="td-muted" style={{ marginTop: 2 }}>
+                            rendering…
+                          </div>
+                        )}
+                      </td>
+                      <td style={td} className="td-critique">
+                        {topCritique ? (
+                          <div className="critique-block">
+                            <span className="critique-who">
+                              &lt;{topCritique.criticAgent}&gt; —{" "}
+                            </span>
+                            {topCritique.verdict}
+                            <div className="critique-scores" aria-label="Rubric subscores">
+                              p{topCritique.scores.pixelCrunch} d{topCritique.scores.dialupWarmth}{" "}
+                              c{topCritique.scores.burnedCdAuthenticity} m
+                              {topCritique.scores.mixtapeCohesion}
+                            </div>
+                          </div>
+                        ) : critiqueStalled ? (
+                          <span className="td-muted">A&amp;R stalling…</span>
+                        ) : (
+                          <span className="td-muted">waiting for review…</span>
+                        )}
+                      </td>
+                      <td style={{ ...td, textAlign: "center" }} className="td-score">
+                        {topCritique ? `${topCritique.scores.overall}/10` : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {!hasLiveRows && (
+        <div className="win98">
+          <div className="win98-titlebar" style={{ fontSize: 12 }}>
+            <span>illustration — sample thread pattern (hidden once real data arrives)</span>
+          </div>
+          <FeedSampleRows />
+          <div
+            style={{ padding: "4px 8px", fontSize: 10, color: "#404040", background: "#d8d8d8" }}
+          >
+            Shown while the network has no rows yet, so you can read the columns. These rows
+            disappear as soon as a real producer posts.
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-const th: React.CSSProperties = { textAlign: "left", padding: "4px 8px", fontFamily: '"MS Sans Serif", Tahoma, sans-serif' };
-const td: React.CSSProperties = { padding: "6px 8px", verticalAlign: "top" };
+const td: CSSProperties = { padding: "6px 8px", verticalAlign: "top" };
