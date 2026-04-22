@@ -98,7 +98,8 @@ export function SeedBox() {
       {busy && (
         <div className="seedbox-progress" style={{ marginTop: 8 }}>
           <div style={{ fontSize: 11, color: "#004040", marginBottom: 2 }}>
-            ◈ broadcasting to the network… (row appears when the track is claimed)
+            ◈ broadcasting… you should see a new row at the top of the feed while the
+            track records
           </div>
           <div
             style={{
