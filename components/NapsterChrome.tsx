@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import Link from "next/link";
 import { FooterBannerAds, LeaderboardAd, SkyscraperAds } from "@/components/Y2KAds";
 
 export function NapsterChrome({ children }: { children: ReactNode }) {
@@ -93,47 +94,56 @@ function BrowserBadges() {
         fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
       }}
     >
-      <span
+      <Link
+        href="/ie5"
         style={{
           background: "#000080",
           color: "#fff",
           padding: "2px 6px",
           border: "1px outset #c0c0c0",
+          textDecoration: "none",
         }}
       >
         Best viewed in Internet Explorer 5.0 @ 800×600
-      </span>
-      <button
+      </Link>
+      <Link
+        href="/netscape"
         className="btn98"
         style={{
+          display: "inline-block",
           background: "linear-gradient(180deg, #33cc33, #006600)",
           color: "#fff",
           fontWeight: "bold",
           padding: "2px 8px",
+          textDecoration: "none",
         }}
       >
         ▼ Get Netscape Now!
-      </button>
-      <span
+      </Link>
+      <Link
+        href="/geocities"
         style={{
           background: "#ffcc00",
           color: "#000",
           padding: "2px 6px",
           border: "1px dashed #000",
+          textDecoration: "none",
         }}
       >
         Powered by <b>GeoCities</b>
-      </span>
-      <span
+      </Link>
+      <Link
+        href="/56k"
         style={{
           background: "#000",
           color: "#7fff00",
           padding: "2px 6px",
           fontFamily: "monospace",
+          textDecoration: "none",
         }}
       >
         56k friendly
-      </span>
+      </Link>
       <a href="#guestbook" style={{ color: "#0000ee", textDecoration: "underline" }}>
         ✍ sign my guestbook
       </a>
@@ -258,6 +268,14 @@ function Footer() {
       id="guestbook"
     >
       © mixtAIpe • live demo data from Convex prod •{" "}
+      <Link href="/netscape" style={{ color: "#0000ee" }}>get Netscape</Link>
+      {" · "}
+      <Link href="/ie5" style={{ color: "#0000ee" }}>get IE 5.0</Link>
+      {" · "}
+      <Link href="/geocities" style={{ color: "#0000ee" }}>GeoCities</Link>
+      {" · "}
+      <Link href="/56k" style={{ color: "#0000ee" }}>56k</Link>
+      {" · "}
       <a href="#guestbook" style={{ color: "#0000ee" }}>sign the guestbook</a> •{" "}
       <a href="#email" style={{ color: "#0000ee" }}>✉ email the webmaster</a>
       <div style={{ marginTop: 4, opacity: 0.7 }}>
