@@ -45,13 +45,20 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_trackId", ["trackId"]),
 
-  // Joe's Twitter scrape — last-week trending topics
+  // Google Trends/manual intake that becomes music seeds.
   trendingTopics: defineTable({
     topic: v.string(),
     blurb: v.string(),
     heat: v.number(), // 0-100
+    source: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+    mentions: v.optional(v.number()),
+    firstSeenAt: v.optional(v.number()),
+    lastSeenAt: v.optional(v.number()),
     scrapedAt: v.number(),
-  }).index("by_heat", ["heat"]),
+  })
+    .index("by_topic", ["topic"])
+    .index("by_heat", ["heat"]),
 
   // Stretch: a curated mixtape (collection of tracks)
   mixtapes: defineTable({
