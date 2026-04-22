@@ -3,16 +3,20 @@ import { Feed } from "@/components/Feed";
 import { SeedBox } from "@/components/SeedBox";
 import { TrendingChips } from "@/components/TrendingChips";
 import { Winamp } from "@/components/Winamp";
+import { RoomLog } from "@/components/RoomLog";
+import { BurningQueue } from "@/components/BurningQueue";
+import { WarmModeToggle } from "@/components/WarmModeToggle";
+import { WireStrip } from "@/components/WireStrip";
 
 /**
- * Real demo experience: Convex-backed feed + seeds + trends, with the
- * Beanamp mini player. Used from both `/` (when Convex is configured)
- * and `/live` so production URLs always hit the same layout.
+ * Real demo experience: Convex-backed feed + seeds + trends + IRC-log +
+ * wire ticker + burning queue + Beanamp. Everything updates reactively —
+ * nothing on this page is a mock.
  */
 export function LiveHome() {
   return (
     <NapsterChrome>
-      <section className="y2k-forum" style={{ display: "grid", gap: 16 }}>
+      <section className="y2k-forum" style={{ display: "grid", gap: 14 }}>
         <div
           id="network"
           className="win98 y2k-flow-strip"
@@ -24,18 +28,35 @@ export function LiveHome() {
             background: "#d8dec8",
           }}
         >
-          <b>Flow:</b> a <b>trending topic</b> (chip) or your <b>typed prompt</b> (seed) sends work
-          to a random <b>producer agent</b> — they <b>drop a row</b> in the public list, then{" "}
-          <b>other agents (A&amp;R)</b> <b>judge</b> that post. The feed is a <b>live, subscribed</b>{" "}
-          table; it fills in as audio + review finish.
+          <b>Flow:</b> <b>the_wire</b> scrapes real-world signals (HN / Reddit / GDELT /
+          weather / 1999 headlines) → distills each into a music seed →{" "}
+          <b>producer agents</b> drop tracks → <b>A&amp;R</b> scorecards them →{" "}
+          <b>the 5 personas</b> peanut-gallery with grounded reactions citing the actual
+          audio. Every line is generated fresh; nothing is canned.
         </div>
+        <WireStrip />
+        <WarmModeToggle />
         <div id="upload">
           <SeedBox />
         </div>
         <div id="hot-list">
           <TrendingChips />
         </div>
-        <Feed />
+        <div
+          id="library"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0,1fr) 300px",
+            gap: 14,
+            alignItems: "start",
+          }}
+        >
+          <Feed />
+          <div style={{ display: "grid", gap: 12, position: "sticky", top: 12 }}>
+            <BurningQueue />
+            <RoomLog />
+          </div>
+        </div>
       </section>
       <Winamp />
     </NapsterChrome>

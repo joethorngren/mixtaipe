@@ -1,7 +1,33 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-// Fetch one track (for critique action). O(1).
+// Mirrors convex/schema.ts :: audioFeatures + vibe so patches validate.
+const audioFeatures = v.object({
+  durationSec: v.number(),
+  bpm: v.number(),
+  peakDbfs: v.number(),
+  rmsDbfs: v.number(),
+  lowEnergy: v.number(),
+  midEnergy: v.number(),
+  highEnergy: v.number(),
+  dynamicRange: v.number(),
+  sampleRate: v.number(),
+  channels: v.number(),
+});
+
+const vibe = v.object({
+  category: v.string(),
+  sentiment: v.string(),
+  energy: v.number(),
+  density: v.number(),
+  era: v.string(),
+  palette: v.array(v.string()),
+  hooks: v.array(v.string()),
+  avoid: v.array(v.string()),
+  reasoning: v.string(),
+});
+
+// Fetch one track (+ audio URL + features). O(1).
 export const getById = query({
   args: { trackId: v.id("tracks") },
   handler: async (ctx, { trackId }) => {
@@ -14,7 +40,7 @@ export const getById = query({
   },
 });
 
-// Reactive feed — Pedro subscribes to this
+// Reactive feed — hydrates every row with critiques, reactions, audio URL.
 export const listFeed = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 50 }) => {
@@ -27,19 +53,36 @@ export const listFeed = query({
       .filter((t) => t.lyriaModel !== "no-audio" && t.lyriaModel !== "error")
       .slice(0, limit);
 
-    // Hydrate with critiques + audio URL
     return Promise.all(
       visibleRows.map(async (t) => {
         const critiques = await ctx.db
           .query("critiques")
           .withIndex("by_trackId", (q) => q.eq("trackId", t._id))
           .collect();
+        const reactions = await ctx.db
+          .query("reactions")
+          .withIndex("by_trackId", (q) => q.eq("trackId", t._id))
+          .collect();
         const audioUrl = t.audioStorageId
           ? await ctx.storage.getUrl(t.audioStorageId)
           : null;
-        return { ...t, critiques, audioUrl };
-      })
+        const score = reactions.reduce((s, r) => s + (r.vote || 0), 0);
+        return { ...t, critiques, reactions, audioUrl, score };
+      }),
     );
+  },
+});
+
+// Heartbeat calls this to avoid stomping on human activity.
+export const recentCreatedAt = query({
+  args: {},
+  handler: async (ctx) => {
+    const row = await ctx.db
+      .query("tracks")
+      .withIndex("by_createdAt")
+      .order("desc")
+      .first();
+    return row?.createdAt ?? null;
   },
 });
 
@@ -80,17 +123,20 @@ export const insertTrack = mutation({
     title: v.string(),
     prompt: v.string(),
     topic: v.optional(v.string()),
+    vibe: v.optional(vibe),
     audioStorageId: v.optional(v.id("_storage")),
     durationSec: v.optional(v.number()),
     lyriaModel: v.optional(v.string()),
     remixOf: v.optional(v.id("tracks")),
+    sourceSignalId: v.optional(v.id("signals")),
+    sentiment: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     return ctx.db.insert("tracks", { ...args, createdAt: Date.now() });
   },
 });
 
-/** Patch audio + metadata after insert — used so the feed can show a row before Lyria returns. */
+/** Patch audio + metadata after insert. */
 export const updateTrack = mutation({
   args: {
     trackId: v.id("tracks"),
@@ -98,7 +144,10 @@ export const updateTrack = mutation({
     durationSec: v.optional(v.number()),
     lyriaModel: v.optional(v.string()),
   },
-  handler: async (ctx, { trackId, audioStorageId, durationSec, lyriaModel }) => {
+  handler: async (
+    ctx,
+    { trackId, audioStorageId, durationSec, lyriaModel },
+  ) => {
     const patch: {
       audioStorageId?: typeof audioStorageId;
       durationSec?: number;
@@ -110,6 +159,17 @@ export const updateTrack = mutation({
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(trackId, patch);
     }
+  },
+});
+
+/** Persist the WAV/MP3 analysis so later reactions/critiques can reuse it. */
+export const patchFeatures = mutation({
+  args: {
+    trackId: v.id("tracks"),
+    audioFeatures,
+  },
+  handler: async (ctx, { trackId, audioFeatures }) => {
+    await ctx.db.patch(trackId, { audioFeatures });
   },
 });
 

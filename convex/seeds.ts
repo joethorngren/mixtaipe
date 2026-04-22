@@ -6,6 +6,19 @@ import type { Doc } from "./_generated/dataModel";
 
 const TREND_BATTLE_AGENT_COUNT = 3;
 
+// Kept in sync with schema.ts :: vibeValidator.
+const vibeArg = v.object({
+  category: v.string(),
+  sentiment: v.string(),
+  energy: v.number(),
+  density: v.number(),
+  era: v.string(),
+  palette: v.array(v.string()),
+  hooks: v.array(v.string()),
+  avoid: v.array(v.string()),
+  reasoning: v.string(),
+});
+
 const topicImportValidator = v.object({
   topic: v.string(),
   blurb: v.string(),
@@ -97,6 +110,34 @@ export const importTopics = mutation({
   },
 });
 
+// Read-only lookup used by seedFromTopic to reuse cached vibe + blurb context.
+export const getTopicByName = query({
+  args: { topic: v.string() },
+  handler: async (ctx, { topic }) => {
+    return ctx.db
+      .query("trendingTopics")
+      .withIndex("by_topic", (q) => q.eq("topic", normalizeTopic(topic)))
+      .unique();
+  },
+});
+
+// Patch cached vibe back onto a trendingTopics row after enrichment so repeat
+// seeds skip the Gemini round-trip. Safe no-op if the row doesn't exist (e.g.
+// free-form user prompts that were never scraped).
+export const cacheVibeOnTopic = mutation({
+  args: { topic: v.string(), vibe: vibeArg },
+  handler: async (ctx, { topic, vibe }) => {
+    const normalized = normalizeTopic(topic);
+    if (!normalized) return;
+    const row = await ctx.db
+      .query("trendingTopics")
+      .withIndex("by_topic", (q) => q.eq("topic", normalized))
+      .unique();
+    if (!row) return;
+    await ctx.db.patch(row._id, { vibe, vibeEnrichedAt: Date.now() });
+  },
+});
+
 export const seedTrendBattle = action({
   args: {
     trendId: v.id("trendingTopics"),
@@ -133,20 +174,42 @@ export const markBattleStarted = mutation({
 });
 
 // User clicks a trending chip OR types a prompt → fires this
-// Chains: pick a persona → generate track → critique track
+// Chains: enrich trend → pick persona → generate track → critique track.
+// The enrich step is the "aware prompt" layer — it turns a raw trend string
+// into a structured TrendVibe that shapes Lyria's output AND is quoted back
+// in the A&R column so judges can see the reasoning, not just the output.
 export const seedFromTopic = action({
   args: {
     topic: v.string(),
     agentHandle: v.optional(v.string()), // if omitted, pick random
   },
   handler: async (ctx, { topic, agentHandle }): Promise<null> => {
-    const trackId = await ctx.runAction(api.generate.generateTrack, {
+    // 1) Resolve cached context (blurb + vibe) if this trend came from a scrape.
+    const cached = await ctx.runQuery(api.seeds.getTopicByName, { topic });
+    const blurb: string | undefined = cached?.blurb;
+
+    // 2) Enrich — prefer cache, else call Gemini (with heuristic fallback
+    //    inside the action so it can't stall the pipeline).
+    let vibe = cached?.vibe ?? undefined;
+    if (!vibe) {
+      try {
+        vibe = await ctx.runAction(api.enrich.enrichTrend, { topic, blurb });
+        if (vibe && cached) {
+          await ctx.runMutation(api.seeds.cacheVibeOnTopic, { topic, vibe });
+        }
+      } catch (err) {
+        console.warn("[seedFromTopic] enrich failed, continuing without vibe:", err);
+      }
+    }
+
+    // 3) Generate — vibe fuses with persona inside buildLyriaPrompt.
+    // generateTrack itself schedules the critique, reactions, and cascade
+    // remixes once audio lands, so humans and heartbeat share one pipeline.
+    await ctx.runAction(api.generate.generateTrack, {
       topic,
       agentHandle,
+      vibe,
     });
-    // Schedule critique on the work pool so the UI is not stuck waiting on Gemini
-    // (track row is already visible; A&R fills in when this completes).
-    await ctx.scheduler.runAfter(0, api.critique.critiqueTrack, { trackId });
     return null;
   },
 });
