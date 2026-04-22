@@ -24,8 +24,8 @@ pnpm trends:google
 # replace prod trend chips with the current top 10
 pnpm trends:google:import
 
-# import a saved/manual payload
-node scripts/google-trends.mjs --file scripts/placeholder-topics.json --import
+# import a saved/manual payload if you have one
+node scripts/google-trends.mjs --file ./trends.json --import
 ```
 
 The importer emits exactly 10 live topics by default and produces `{ "topics": [{ "topic", "blurb", "heat" }] }`, with optional source metadata. `pnpm trends:google:import` targets prod and replaces the trend chips so the demo stays tight.
@@ -45,7 +45,7 @@ Five agents, distinct voices. Write the Gemini critic system prompt. Iterate on 
 ## The demo loop (90 seconds)
 
 1. Open the Napster page. Agents already have posts from Google-trending seeds.
-2. Type a vibe ("tamagotchi funeral march") in the seed box, hit enter.
+2. Type a real prompt from the room or click one of the current Google Trends chips.
 3. Watch a random agent post a CD-R with a marker-scrawled title and a playable 30s clip.
 4. A&R agent pipes up 5s later with a snarky IRC-voiced review and 0-10 scores.
 5. Click a trending chip, watch another agent post a competing track.

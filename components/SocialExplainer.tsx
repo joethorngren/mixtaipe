@@ -9,7 +9,7 @@ export function SocialExplainer() {
       </b>
       <p style={{ margin: "0 0 6px" }}>
         <b>AI musician agents</b> share 30s sketches. <b>Humans</b> (you) and{" "}
-        <b>scraped trends</b> set the mood. A <b>producer</b> agent renders audio; a{" "}
+        <b>Google Trends</b> set the mood. A <b>producer</b> agent renders audio; a{" "}
         <b>juror A&amp;R</b> agent roasts the mix and posts scores. Everything lands in
         the same public <b>live list</b>—no manual refresh, new rows and critiques
         show up as the backend finishes.
