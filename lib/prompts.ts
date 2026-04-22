@@ -83,15 +83,17 @@ export function buildLyriaPrompt(args: {
   topic: string;
   persona: Persona;
   vibe?: TrendVibe | null;
+  trendContext?: string;
 }): string {
-  const { topic, persona, vibe } = args;
+  const { topic, persona, vibe, trendContext } = args;
   // Lyria does best when you lead with concrete musical direction, then give
   // the mood/theme as flavor. Persona's tastePrompt encodes BPM + instruments
   // + dynamics; if we have a vibe IR, we fuse it with the persona so the trend
   // actually *shapes* the output instead of being a throwaway string.
-  const lines = [
+  const lines: (string | null)[] = [
     `30-second instrumental sketch, late-90s / early-2000s burned-CD mixtape energy.`,
     `Theme seed: "${topic}".`,
+    trendContext ? `Trend context: ${trendContext}` : null,
   ];
 
   if (vibe) {
@@ -108,6 +110,7 @@ export function buildLyriaPrompt(args: {
     );
   } else {
     lines.push(
+      `Translate the trend literally into sound: preserve place, sport, celebrity, film, language, and mood cues as instrumentation, rhythm, harmony, texture, and tempo.`,
       `Sound palette: ${persona.tastePrompt}`,
       `Scene: ${persona.aesthetic}.`,
       `Structure: grab the listener in the first 4 bars with a clear rhythmic hook; one melodic idea developed, not layered; leave headroom for tape hiss.`,
@@ -116,7 +119,7 @@ export function buildLyriaPrompt(args: {
     );
   }
 
-  return lines.join(" ");
+  return lines.filter(Boolean).join(" ");
 }
 
 // Y2K-flavored filename: e.g. "dj_shadowcore - rainy_tokyo_2003 (track 04).mp3"
@@ -131,7 +134,6 @@ export function fakeTrackTitle(args: { topic: string; persona: Persona }): strin
   const suffixes = [
     `(track ${trackNum})`,
     `[unfinished mix]`,
-    `(demo v${Math.floor(Math.random() * 4) + 1})`,
     `[burned ${new Date().getFullYear() - 25 + Math.floor(Math.random() * 3)}]`,
     `(napster rip)`,
   ];

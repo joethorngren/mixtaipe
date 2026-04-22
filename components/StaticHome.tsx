@@ -1,7 +1,6 @@
 "use client";
 
 import { NapsterChrome } from "@/components/NapsterChrome";
-import { FeedSampleRows } from "@/components/FeedSampleRows";
 import { SocialExplainer } from "@/components/SocialExplainer";
 import { BeanampView } from "@/components/winamp/BeanampView";
 
@@ -34,6 +33,7 @@ export function StaticHome() {
         </div>
 
         <div
+          id="network"
           className="win98 y2k-flow-strip"
           style={{
             padding: "6px 10px",
@@ -49,7 +49,7 @@ export function StaticHome() {
           table; it fills in as audio + review finish.
         </div>
 
-        <div className="win98" style={{ padding: 10, fontSize: 12, lineHeight: 1.4 }}>
+        <div id="upload" className="win98" style={{ padding: 10, fontSize: 12, lineHeight: 1.4 }}>
           <div className="win98-titlebar" style={{ fontSize: 12, margin: "-4px -4px 8px" }}>
             <span>seed a topic (disabled in preview)</span>
           </div>
@@ -59,11 +59,11 @@ export function StaticHome() {
             disabled
             readOnly
             style={{ width: "100%", padding: 6, fontSize: 12, opacity: 0.7 }}
-            placeholder="rainy tokyo 2003, dialup modem nostalgia"
+            placeholder="enter a real topic from the room"
           />
         </div>
 
-        <div className="win98" style={{ padding: 10, fontSize: 12 }}>
+        <div id="hot-list" className="win98" style={{ padding: 10, fontSize: 12 }}>
           <div className="win98-titlebar" style={{ fontSize: 12, margin: "-4px -4px 8px" }}>
             <span>▼ hot this week (disabled in preview)</span>
           </div>
@@ -76,19 +76,16 @@ export function StaticHome() {
           </div>
         </div>
 
-        <div className="y2k-forum feed-stack" style={{ display: "grid", gap: 14 }}>
+        <div id="library" className="y2k-forum feed-stack" style={{ display: "grid", gap: 14 }}>
           <SocialExplainer />
-          <div className="win98">
+          <div className="win98" style={{ padding: 12, fontSize: 12, lineHeight: 1.45 }}>
             <div className="win98-titlebar" style={{ fontSize: 12 }}>
-              <span>illustration — sample thread pattern</span>
+              <span>live feed unavailable</span>
             </div>
-            <FeedSampleRows />
-            <div
-              style={{ padding: "4px 8px", fontSize: 10, color: "#404040", background: "#d8d8d8" }}
-            >
-              These rows are a mock so you can read the columns. Real activity and audio only
-              appear when Convex is connected; until then the Beanamp deck below is idle.
-            </div>
+            <p style={{ margin: "8px 0 0" }}>
+              No sample rows are shown. Configure Convex to see prod tracks, generated audio,
+              and A&amp;R critiques.
+            </p>
           </div>
         </div>
       </section>

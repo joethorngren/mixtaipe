@@ -18,6 +18,7 @@ export function LiveHome() {
     <NapsterChrome>
       <section className="y2k-forum" style={{ display: "grid", gap: 14 }}>
         <div
+          id="network"
           className="win98 y2k-flow-strip"
           style={{
             padding: "6px 10px",
@@ -35,9 +36,14 @@ export function LiveHome() {
         </div>
         <WireStrip />
         <WarmModeToggle />
-        <SeedBox />
-        <TrendingChips />
+        <div id="upload">
+          <SeedBox />
+        </div>
+        <div id="hot-list">
+          <TrendingChips />
+        </div>
         <div
+          id="library"
           style={{
             display: "grid",
             gridTemplateColumns: "minmax(0,1fr) 300px",

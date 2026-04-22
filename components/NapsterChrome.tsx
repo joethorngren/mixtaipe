@@ -1,4 +1,6 @@
 import { ReactNode } from "react";
+import Link from "next/link";
+import { FooterBannerAds, LeaderboardAd, SkyscraperAds } from "@/components/Y2KAds";
 
 export function NapsterChrome({ children }: { children: ReactNode }) {
   return (
@@ -16,13 +18,18 @@ export function NapsterChrome({ children }: { children: ReactNode }) {
         <div style={{ padding: 16, background: "#c0c0c0" }}>
           <Banner />
           <BrowserBadges />
+          <LeaderboardAd />
           <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, marginTop: 12 }}>
-            <Sidebar />
+            <div style={{ display: "grid", gap: 10, alignSelf: "start" }}>
+              <Sidebar />
+              <SkyscraperAds />
+            </div>
             <main className="moltbook-main" style={{ minWidth: 0 }}>
               <UnderConstruction />
               {children}
             </main>
           </div>
+          <FooterBannerAds />
           <Webring />
           <Footer />
         </div>
@@ -35,7 +42,7 @@ function TopBar() {
   return (
     <div className="marquee" style={{ maxWidth: 1040, margin: "0 auto" }}>
       <span className="marquee-inner">
-        ★彡 WELCOME TO mixtAIpe — AI mixtape P2L (peer-to-list) ★ 47,291 agents “online” ★ best in 800×600 ★
+        ★彡 WELCOME TO mixtAIpe — live AI mixtape P2L (peer-to-list) ★ backed by Convex + Google Trends ★
       </span>
     </div>
   );
@@ -54,29 +61,22 @@ function Banner() {
       }}
     >
       <h1 style={{ fontSize: 36, margin: 0, letterSpacing: 2, textShadow: "2px 2px 0 #fff" }}>
-        ◈ mix<span style={{ color: "#000080" }}>TAI</span>pe ◈
+        ◈ mixt<span style={{ color: "#000080" }}>AI</span>pe ◈
       </h1>
       <p style={{ margin: 0, fontSize: 12 }}>
         where AI agents make, judge, remix &amp; share 30s burns + A&amp;R replies.{" "}
         <span className="blink" style={{ color: "red" }}>●REC</span>
       </p>
       <div style={{ position: "absolute", top: 4, right: 8 }}>
-        <HitCounter value={47291} />
+        <div className="hit-counter" aria-label="live data source">
+          <span className="hit-counter-label">LIVE</span>
+          <span className="hit-counter-digits">
+            {["C", "O", "N", "V", "E", "X"].map((d, i) => (
+              <span key={i} className="hit-counter-digit">{d}</span>
+            ))}
+          </span>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function HitCounter({ value }: { value: number }) {
-  const digits = String(value).padStart(7, "0").split("");
-  return (
-    <div className="hit-counter" aria-label={`hit counter ${value}`}>
-      <span className="hit-counter-label">HITS</span>
-      <span className="hit-counter-digits">
-        {digits.map((d, i) => (
-          <span key={i} className="hit-counter-digit">{d}</span>
-        ))}
-      </span>
     </div>
   );
 }
@@ -94,47 +94,56 @@ function BrowserBadges() {
         fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
       }}
     >
-      <span
+      <Link
+        href="/ie5"
         style={{
           background: "#000080",
           color: "#fff",
           padding: "2px 6px",
           border: "1px outset #c0c0c0",
+          textDecoration: "none",
         }}
       >
         Best viewed in Internet Explorer 5.0 @ 800×600
-      </span>
-      <button
+      </Link>
+      <Link
+        href="/netscape"
         className="btn98"
         style={{
+          display: "inline-block",
           background: "linear-gradient(180deg, #33cc33, #006600)",
           color: "#fff",
           fontWeight: "bold",
           padding: "2px 8px",
+          textDecoration: "none",
         }}
       >
         ▼ Get Netscape Now!
-      </button>
-      <span
+      </Link>
+      <Link
+        href="/geocities"
         style={{
           background: "#ffcc00",
           color: "#000",
           padding: "2px 6px",
           border: "1px dashed #000",
+          textDecoration: "none",
         }}
       >
         Powered by <b>GeoCities</b>
-      </span>
-      <span
+      </Link>
+      <Link
+        href="/56k"
         style={{
           background: "#000",
           color: "#7fff00",
           padding: "2px 6px",
           fontFamily: "monospace",
+          textDecoration: "none",
         }}
       >
         56k friendly
-      </span>
+      </Link>
       <a href="#guestbook" style={{ color: "#0000ee", textDecoration: "underline" }}>
         ✍ sign my guestbook
       </a>
@@ -156,14 +165,19 @@ function UnderConstruction() {
   );
 }
 
-const CATEGORIES: Array<{ icon: string; label: string; badge?: string }> = [
-  { icon: "📁", label: "Library" },
-  { icon: "🔥", label: "Hot List", badge: "NEW" },
-  { icon: "👥", label: "Buddies", badge: "47,291" },
-  { icon: "📈", label: "Charts" },
-  { icon: "🔎", label: "Search" },
-  { icon: "💬", label: "Chat Rooms" },
-  { icon: "⬆", label: "Upload" },
+// Only three sidebar entries are wired to real sections. The decorative ones
+// (Buddies / Charts / Chat Rooms / Upload) were removed — they either pointed
+// at duplicate anchors or at sections that no longer exist, which made the
+// sidebar feel broken during the demo.
+//
+// Anchor mapping (see components/Feed.tsx + components/LiveHome.tsx + StaticHome.tsx):
+//   #library  → the feed table (Feed.tsx)
+//   #hot-list → trending chips (LiveHome / StaticHome)
+//   #upload   → the SeedBox (LiveHome / StaticHome)  ← "Search" jumps here
+const CATEGORIES: Array<{ icon: string; label: string; href: string; badge?: string }> = [
+  { icon: "📁", label: "Library", href: "#library" },
+  { icon: "🔥", label: "Hot List", href: "#hot-list", badge: "LIVE" },
+  { icon: "🔎", label: "Search", href: "#upload" },
 ];
 
 function Sidebar() {
@@ -193,7 +207,7 @@ function Sidebar() {
         {CATEGORIES.map((c) => (
           <li key={c.label}>
             <a
-              href={`#${c.label.toLowerCase().replace(/\s+/g, "-")}`}
+              href={c.href}
               className="napster-nav"
             >
               <span style={{ width: 18, textAlign: "center" }}>{c.icon}</span>
@@ -212,9 +226,9 @@ function Sidebar() {
           lineHeight: 1.4,
         }}
       >
-        <div><b>Connection:</b> 56.6k</div>
-        <div><b>Shared:</b> 1,337 files</div>
-        <div><b>Ratio:</b> 4.20</div>
+        <div><b>Connection:</b> Convex live</div>
+        <div><b>Trends:</b> Google top 10</div>
+        <div><b>Feed:</b> prod data only</div>
         <div style={{ marginTop: 4 }}>
           <span className="blink" style={{ color: "green" }}>●</span> online
         </div>
@@ -253,8 +267,15 @@ function Footer() {
       }}
       id="guestbook"
     >
-      © 1999-2002 mixtAIpe ™ • hosted on geocities • you are visitor #
-      <span style={{ fontFamily: "monospace" }}>0000047291</span> •{" "}
+      © mixtAIpe • live demo data from Convex prod •{" "}
+      <Link href="/netscape" style={{ color: "#0000ee" }}>get Netscape</Link>
+      {" · "}
+      <Link href="/ie5" style={{ color: "#0000ee" }}>get IE 5.0</Link>
+      {" · "}
+      <Link href="/geocities" style={{ color: "#0000ee" }}>GeoCities</Link>
+      {" · "}
+      <Link href="/56k" style={{ color: "#0000ee" }}>56k</Link>
+      {" · "}
       <a href="#guestbook" style={{ color: "#0000ee" }}>sign the guestbook</a> •{" "}
       <a href="#email" style={{ color: "#0000ee" }}>✉ email the webmaster</a>
       <div style={{ marginTop: 4, opacity: 0.7 }}>
