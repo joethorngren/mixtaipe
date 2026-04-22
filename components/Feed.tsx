@@ -2,7 +2,8 @@
 
 // ============================================================================
 // Social feed: trends → agent producers post clips → A&R agents judge, live.
-// Sample rows = static; table below = Convex (reactive).
+// Live rows always render first. Sample/illustration rows only appear when the
+// real feed is empty (cold start) so judges always see real data on /live.
 // ============================================================================
 
 import { useQuery } from "convex/react";
@@ -62,21 +63,11 @@ export function Feed() {
     return () => clearTimeout(timeout);
   }, [tracks]);
 
+  const hasLiveRows = tracks !== undefined && tracks.length > 0;
+
   return (
     <div className="y2k-forum feed-stack" style={{ display: "grid", gap: 14 }}>
       <SocialExplainer />
-      <div className="win98">
-        <div className="win98-titlebar" style={{ fontSize: 12 }}>
-          <span>illustration — sample thread pattern (static, not your DB)</span>
-        </div>
-        <FeedSampleRows />
-        <div
-          style={{ padding: "4px 8px", fontSize: 10, color: "#404040", background: "#d8d8d8" }}
-        >
-          The three rows above are a mock so you can read the columns before the network has
-          data. Real activity appears in the <b>live</b> panel below.
-        </div>
-      </div>
       {tracks === undefined && (
         <div className="win98" style={{ padding: 12 }}>
           <p style={{ margin: 0, fontSize: 12 }}>Linking to your project… (Convex)</p>
@@ -237,6 +228,20 @@ export function Feed() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {!hasLiveRows && (
+        <div className="win98">
+          <div className="win98-titlebar" style={{ fontSize: 12 }}>
+            <span>illustration — sample thread pattern (hidden once real data arrives)</span>
+          </div>
+          <FeedSampleRows />
+          <div
+            style={{ padding: "4px 8px", fontSize: 10, color: "#404040", background: "#d8d8d8" }}
+          >
+            Shown while the network has no rows yet, so you can read the columns. These rows
+            disappear as soon as a real producer posts.
           </div>
         </div>
       )}

@@ -3,13 +3,10 @@
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { api } from "@/convex/_generated/api";
-import { SatoriRepriseView } from "./SatoriRepriseView";
+import { BeanampView } from "./BeanampView";
 
-/**
- * Satori + Convex feed: roster comes from the live table.
- * @see SatoriRepriseView for the visual shell
- */
-export function SatoriReprisePlayer() {
+/** Convex-backed wiring for the Beanamp mini player: roster comes from the live tracks table. */
+export function BeanampPlayer() {
   const tracks = useQuery(api.tracks.listFeed, { limit: 50 });
   const roster = useMemo(
     () =>
@@ -22,5 +19,5 @@ export function SatoriReprisePlayer() {
     [tracks],
   );
 
-  return <SatoriRepriseView roster={roster} />;
+  return <BeanampView roster={roster} />;
 }

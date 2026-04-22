@@ -1,1 +1,1 @@
-export { SatoriReprisePlayer as Winamp } from "./winamp/SatoriReprisePlayer";
+export { BeanampPlayer as Winamp } from "./winamp/BeanampPlayer";

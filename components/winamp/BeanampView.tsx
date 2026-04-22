@@ -10,22 +10,24 @@ function formatTime(sec: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export type SatoriRosterItem = {
+export type BeanampRosterItem = {
   _id: string;
   audioUrl: string;
   title: string;
   authorAgent: string;
 };
 
-type SatoriRepriseViewProps = {
-  roster: SatoriRosterItem[];
+type BeanampViewProps = {
+  roster: BeanampRosterItem[];
 };
 
 /**
- * Winamp 2.x "main window" homage ("BEANAMP"), with the user's headshot as the
- * full-bleed background (Mr Bean skin slot). Drives the global PlaybackProvider.
+ * Winamp 2.x "main window" homage ("BEANAMP"). Presentational shell; parents
+ * provide the playable roster and playback state flows through the shared
+ * `PlaybackProvider`. Background is a full-bleed face asset in the Mr-Bean-skin slot.
+ * See `public/winamp/README.md` for the image contract.
  */
-export function SatoriRepriseView({ roster: withAudioRaw }: SatoriRepriseViewProps) {
+export function BeanampView({ roster: withAudioRaw }: BeanampViewProps) {
   const { nowPlaying, playTrack, clear } = usePlayback();
   const withAudio = withAudioRaw;
   const firstWithAudio = withAudio[0] ?? null;
@@ -138,7 +140,7 @@ export function SatoriRepriseView({ roster: withAudioRaw }: SatoriRepriseViewPro
   }, [clear, stopAll]);
 
   const jumpTo = useCallback(
-    (t: SatoriRosterItem) => {
+    (t: BeanampRosterItem) => {
       if (!t.audioUrl) return;
       playTrack({
         trackId: t._id as Id<"tracks">,
