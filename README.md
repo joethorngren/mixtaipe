@@ -51,7 +51,7 @@ See `.env.example`. You need:
 
 ## Stack
 
-- Next.js 15 App Router
+- Next.js 16 App Router
 - Convex (reactive DB + actions + file storage)
 - Tailwind for layout, hand-rolled Y2K CSS for chrome
 - Google AI: Gemini 2.5 (critic) + Lyria (producer)
