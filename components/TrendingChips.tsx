@@ -16,6 +16,23 @@ export function TrendingChips() {
   const [activeId, setActiveId] = useState<Id<"trendingTopics"> | null>(null);
   const inFlight = useRef(false);
 
+  const onChip = useCallback(
+    async (id: Id<"trendingTopics">, topic: string) => {
+      if (inFlight.current) return;
+      inFlight.current = true;
+      setActiveId(id);
+      try {
+        await seed({ topic });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        inFlight.current = false;
+        setActiveId(null);
+      }
+    },
+    [seed],
+  );
+
   if (!topics) {
     return (
       <div className="win98" style={{ padding: 10 }}>
@@ -42,23 +59,6 @@ export function TrendingChips() {
 
   // Ensure heat-desc order defensively (server already does this).
   const sorted = [...topics].sort((a, b) => b.heat - a.heat);
-
-  const onChip = useCallback(
-    async (id: Id<"trendingTopics">, topic: string) => {
-      if (inFlight.current) return;
-      inFlight.current = true;
-      setActiveId(id);
-      try {
-        await seed({ topic });
-      } catch (err) {
-        console.error(err);
-      } finally {
-        inFlight.current = false;
-        setActiveId(null);
-      }
-    },
-    [seed],
-  );
 
   return (
     <div className="win98" style={{ padding: 10 }}>
