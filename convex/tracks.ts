@@ -22,11 +22,14 @@ export const listFeed = query({
       .query("tracks")
       .withIndex("by_createdAt")
       .order("desc")
-      .take(limit);
+      .take(limit * 3);
+    const visibleRows = rows
+      .filter((t) => t.lyriaModel !== "no-audio" && t.lyriaModel !== "error")
+      .slice(0, limit);
 
     // Hydrate with critiques + audio URL
     return Promise.all(
-      rows.map(async (t) => {
+      visibleRows.map(async (t) => {
         const critiques = await ctx.db
           .query("critiques")
           .withIndex("by_trackId", (q) => q.eq("trackId", t._id))
@@ -105,6 +108,30 @@ export const deleteNonLyriaTracks = mutation({
     let deleted = 0;
     for (const track of tracks) {
       if (track.lyriaModel === "lyria-3-clip-preview") continue;
+      const critiques = await ctx.db
+        .query("critiques")
+        .withIndex("by_trackId", (q) => q.eq("trackId", track._id))
+        .collect();
+      for (const critique of critiques) {
+        await ctx.db.delete(critique._id);
+      }
+      await ctx.db.delete(track._id);
+      deleted++;
+    }
+    return { deleted };
+  },
+});
+
+export const deleteTracksByTopic = mutation({
+  args: {
+    topic: v.string(),
+    confirm: v.literal("delete tracks by topic"),
+  },
+  handler: async (ctx, { topic }) => {
+    const tracks = await ctx.db.query("tracks").collect();
+    let deleted = 0;
+    for (const track of tracks) {
+      if (track.topic !== topic) continue;
       const critiques = await ctx.db
         .query("critiques")
         .withIndex("by_trackId", (q) => q.eq("trackId", track._id))
